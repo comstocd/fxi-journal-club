@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>FXI Inhibitors — Journal Club</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0a0e14;
+  --bg2:      #111720;
+  --bg3:      #182030;
+  --border:   rgba(255,255,255,0.08);
+  --amber:    #f0b429;
+  --amber2:   #c88e10;
+  --amber-bg: rgba(240,180,41,0.08);
+  --red:      #ef4444;
+  --red-bg:   rgba(239,68,68,0.08);
+  --green:    #22c55e;
+  --green-bg: rgba(34,197,94,0.08);
+  --blue:     #60a5fa;
+  --blue-bg:  rgba(96,165,250,0.08);
+  --text:     #f0f4f8;
+  --muted:    #8899aa;
+  --dim:      #445566;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 400;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ── DECK ── */
+#deck {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 56px 72px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(60px);
+  transition: opacity 0.45s cubic-bezier(.4,0,.2,1), transform 0.45s cubic-bezier(.4,0,.2,1);
+  overflow: hidden;
+}
+.slide.active {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateX(0);
+}
+.slide.exit-left {
+  opacity: 0;
+  transform: translateX(-60px);
+  pointer-events: none;
+}
+
+/* ── BACKGROUNDS ── */
+.slide::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  z-index: -2;
+}
+.bg-glow-amber::after {
+  content: '';
+  position: absolute;
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, rgba(240,180,41,0.06) 0%, transparent 65%);
+  top: -200px; right: -200px;
+  z-index: -1;
+  pointer-events: none;
+}
+.bg-glow-red::after {
+  content: '';
+  position: absolute;
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, rgba(239,68,68,0.07) 0%, transparent 65%);
+  bottom: -200px; left: -100px;
+  z-index: -1;
+  pointer-events: none;
+}
+.bg-glow-green::after {
+  content: '';
+  position: absolute;
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, rgba(34,197,94,0.07) 0%, transparent 65%);
+  bottom: -200px; right: -100px;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* ── TYPOGRAPHY ── */
+.slide-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 18px;
+  text-align: center;
+}
+.slide-label.red { color: var(--red); }
+.slide-label.green { color: var(--green); }
+.slide-label.blue { color: var(--blue); }
+.slide-label.muted { color: var(--muted); }
+
+h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(36px, 5.5vw, 72px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-align: center;
+  color: var(--text);
+}
+h1 em { font-style: italic; color: var(--amber); }
+
+h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(28px, 4vw, 52px);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  text-align: center;
+}
+h2 em { font-style: italic; color: var(--amber); }
+h2.red em { color: var(--red); }
+h2.green em { color: var(--green); }
+
+h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(22px, 3vw, 38px);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.3;
+}
+
+.body-text {
+  font-size: clamp(16px, 2vw, 22px);
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.7;
+  max-width: 820px;
+  font-weight: 300;
+}
+.body-text strong { color: var(--text); font-weight: 600; }
+.body-text em { color: var(--amber); font-style: normal; font-weight: 500; }
+.body-text .red { color: var(--red); font-weight: 600; }
+.body-text .green { color: var(--green); font-weight: 600; }
+
+/* ── SPACERS ── */
+.sp4  { height: 4px; }
+.sp8  { height: 8px; }
+.sp12 { height: 12px; }
+.sp16 { height: 16px; }
+.sp24 { height: 24px; }
+.sp32 { height: 32px; }
+.sp40 { height: 40px; }
+
+/* ── DIVIDER ── */
+.rule {
+  width: 60px; height: 2px;
+  background: var(--amber);
+  margin: 24px auto;
+  border-radius: 2px;
+}
+.rule.red { background: var(--red); }
+.rule.green { background: var(--green); }
+
+/* ── CASE BOX ── */
+.case-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--amber);
+  border-radius: 0 12px 12px 0;
+  padding: 28px 36px;
+  max-width: 900px;
+  width: 100%;
+  text-align: left;
+}
+.case-box .case-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 14px;
+}
+.case-box p {
+  font-size: clamp(15px, 1.8vw, 20px);
+  color: var(--text);
+  line-height: 1.65;
+  font-weight: 300;
+}
+.case-box p strong { color: var(--amber); font-weight: 600; }
+
+/* ── PROMPT LIST ── */
+.prompt-list {
+  list-style: none;
+  width: 100%;
+  max-width: 860px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+}
+.prompt-list li {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 22px;
+  font-size: clamp(14px, 1.6vw, 19px);
+  color: var(--muted);
+  line-height: 1.5;
+  padding-left: 46px;
+  position: relative;
+}
+.prompt-list li::before {
+  content: '→';
+  position: absolute;
+  left: 18px;
+  top: 16px;
+  color: var(--amber);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+}
+.prompt-list.red li::before { color: var(--red); content: '?'; }
+.prompt-list.green li::before { color: var(--green); }
+
+/* ── COLUMNS ── */
+.cols {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  max-width: 1000px;
+}
+.cols-2 { grid-template-columns: 1fr 1fr; }
+.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px 24px;
+  text-align: left;
+}
+.card .card-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.card .card-label.amber { color: var(--amber); }
+.card .card-label.red { color: var(--red); }
+.card .card-label.green { color: var(--green); }
+.card .card-label.blue { color: var(--blue); }
+.card ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.card li {
+  font-size: clamp(12px, 1.4vw, 16px);
+  color: var(--muted);
+  padding-left: 14px;
+  position: relative;
+  line-height: 1.5;
+}
+.card li::before { content: '•'; position: absolute; left: 0; }
+.card.amber-border { border-color: rgba(240,180,41,0.25); }
+.card.red-border { border-color: rgba(239,68,68,0.25); background: var(--red-bg); }
+.card.green-border { border-color: rgba(34,197,94,0.25); background: var(--green-bg); }
+
+/* ── STAT BLOCKS ── */
+.stat-row {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.stat-block {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px 32px;
+  text-align: center;
+  min-width: 180px;
+}
+.stat-block .big {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(32px, 5vw, 60px);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--amber);
+  margin-bottom: 8px;
+}
+.stat-block .big.red { color: var(--red); }
+.stat-block .big.green { color: var(--green); }
+.stat-block .small {
+  font-size: clamp(11px, 1.3vw, 14px);
+  color: var(--muted);
+  line-height: 1.4;
+  max-width: 150px;
+}
+
+/* ── INSIGHT ── */
+.insight {
+  background: var(--amber-bg);
+  border: 1px solid rgba(240,180,41,0.2);
+  border-radius: 12px;
+  padding: 22px 30px;
+  max-width: 860px;
+  width: 100%;
+  text-align: center;
+  font-size: clamp(15px, 1.8vw, 21px);
+  color: var(--text);
+  line-height: 1.6;
+  font-weight: 300;
+}
+.insight strong { color: var(--amber); font-weight: 600; }
+.insight.red { background: var(--red-bg); border-color: rgba(239,68,68,0.2); }
+.insight.red strong { color: var(--red); }
+.insight.green { background: var(--green-bg); border-color: rgba(34,197,94,0.2); }
+.insight.green strong { color: var(--green); }
+
+/* ── BADGE ── */
+.badge {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.badge.amber { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(240,180,41,0.3); }
+.badge.red { background: var(--red-bg); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+.badge.green { background: var(--green-bg); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+.badge.blue { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(96,165,250,0.3); }
+
+/* ── VERSUS ── */
+.versus {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 20px;
+  align-items: center;
+  width: 100%;
+  max-width: 920px;
+}
+.versus-divider {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  font-style: italic;
+  color: var(--dim);
+  text-align: center;
+}
+
+/* ── PHYSIO TABLE ── */
+.physio-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  width: 100%;
+  max-width: 900px;
+}
+.physio-col {
+  border-radius: 12px;
+  padding: 22px 26px;
+  text-align: left;
+}
+.physio-col.hem {
+  background: var(--green-bg);
+  border: 1px solid rgba(34,197,94,0.2);
+}
+.physio-col.throm {
+  background: var(--red-bg);
+  border: 1px solid rgba(239,68,68,0.2);
+}
+.physio-col .phys-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+.physio-col.hem .phys-title { color: var(--green); }
+.physio-col.throm .phys-title { color: var(--red); }
+.physio-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.physio-col li {
+  font-size: clamp(12px, 1.5vw, 16px);
+  color: var(--muted);
+  padding-left: 16px;
+  position: relative;
+  line-height: 1.5;
+}
+.physio-col.hem li::before { content: '✓'; position: absolute; left: 0; color: var(--green); font-weight: 700; font-size: 12px; top: 1px; }
+.physio-col.throm li::before { content: '↓'; position: absolute; left: 0; color: var(--red); font-weight: 700; font-size: 12px; top: 1px; }
+
+/* ── ACT MARKER ── */
+.act-marker {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+.act-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.act-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+/* ── OBJECTIVES LIST ── */
+.obj-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 840px;
+  text-align: left;
+}
+.obj-list li {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 20px;
+  font-size: clamp(13px, 1.5vw, 17px);
+  color: var(--muted);
+  line-height: 1.5;
+}
+.obj-list .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--amber);
+  background: var(--amber-bg);
+  min-width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-weight: 600;
+  margin-top: 1px;
+}
+
+/* ── REVERSAL ALERT ── */
+.reversal-alert {
+  background: rgba(239,68,68,0.07);
+  border: 2px solid rgba(239,68,68,0.35);
+  border-radius: 14px;
+  padding: 28px 36px;
+  max-width: 920px;
+  width: 100%;
+  text-align: left;
+}
+.reversal-alert .alert-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 16px;
+}
+.reversal-alert ul {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.reversal-alert li {
+  font-size: clamp(12px, 1.5vw, 16px);
+  color: #fca5a5;
+  padding-left: 20px;
+  position: relative;
+  line-height: 1.5;
+}
+.reversal-alert li::before { content: '✗'; position: absolute; left: 0; color: var(--red); font-weight: 700; }
+
+/* ── DEBATE ── */
+.debate-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  width: 100%;
+  max-width: 960px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.debate-col {
+  padding: 24px 28px;
+  text-align: left;
+}
+.debate-col.pro { background: var(--green-bg); border-right: 1px solid var(--border); }
+.debate-col.con { background: var(--red-bg); }
+.debate-col .dtitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+.debate-col.pro .dtitle { color: var(--green); }
+.debate-col.con .dtitle { color: var(--red); }
+.debate-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.debate-col li {
+  font-size: clamp(12px, 1.4vw, 16px);
+  color: var(--muted);
+  padding-left: 18px;
+  position: relative;
+  line-height: 1.5;
+}
+.debate-col.pro li::before { content: '+'; position: absolute; left: 0; color: var(--green); font-weight: 800; }
+.debate-col.con li::before { content: '−'; position: absolute; left: 0; color: var(--red); font-weight: 800; }
+
+/* ── TAKEAWAYS ── */
+.takeaway-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  max-width: 1020px;
+  text-align: left;
+}
+.takeaway-item {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.takeaway-n {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--amber);
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.takeaway-t {
+  font-size: clamp(11px, 1.3vw, 14px);
+  color: var(--muted);
+  line-height: 1.5;
+}
+.takeaway-t strong { color: var(--text); font-weight: 600; }
+
+/* ── AGENDA BAR ── */
+.agenda-track {
+  display: flex;
+  gap: 3px;
+  width: 100%;
+  max-width: 800px;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.ag-seg {
+  border-radius: 2px;
+  opacity: 0.6;
+}
+.agenda-labels {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 12px;
+}
+.ag-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ag-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* ── DRUG TABLE ── */
+.drug-table {
+  width: 100%;
+  max-width: 960px;
+  border-collapse: collapse;
+  font-size: clamp(11px, 1.3vw, 15px);
+}
+.drug-table th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--dim);
+  padding: 10px 14px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.drug-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  vertical-align: top;
+  line-height: 1.5;
+}
+.drug-table tr:last-child td { border-bottom: none; }
+.drug-table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+.drug-table .dn { font-weight: 600; color: var(--text); font-size: 1.05em; }
+.drug-table .dc { font-size: 0.85em; color: var(--dim); }
+
+/* ── PROGRESS BAR ── */
+#progress-bar {
+  position: fixed;
+  bottom: 0; left: 0;
+  height: 3px;
+  background: var(--amber);
+  transition: width 0.4s cubic-bezier(.4,0,.2,1);
+  z-index: 100;
+  border-radius: 0 2px 0 0;
+}
+
+/* ── SLIDE COUNTER ── */
+#slide-counter {
+  position: fixed;
+  bottom: 16px;
+  right: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--dim);
+  z-index: 100;
+  pointer-events: none;
+}
+#slide-counter span { color: var(--muted); }
+
+/* ── NAV TOUCH ZONES ── */
+.nav-zone {
+  position: fixed;
+  top: 0;
+  width: 15%;
+  height: 100%;
+  z-index: 50;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.nav-zone:hover, .nav-zone:active { opacity: 1; }
+#nav-prev { left: 0; }
+#nav-next { right: 0; }
+.nav-arrow {
+  width: 36px; height: 36px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+/* ── FULLSCREEN BTN ── */
+#fullscreen-btn {
+  position: fixed;
+  top: 16px;
+  right: 18px;
+  z-index: 100;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--dim);
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+#fullscreen-btn:hover { color: var(--muted); background: rgba(255,255,255,0.08); }
+
+/* ── SECTION PILL ── */
+.section-pill {
+  position: fixed;
+  top: 16px;
+  left: 20px;
+  z-index: 100;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--dim);
+  letter-spacing: 0.1em;
+  pointer-events: none;
+}
+
+/* ── MONO TEXT ── */
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+/* ── TITLE SLIDE ── */
+.title-rule {
+  width: 100%;
+  max-width: 600px;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--amber), transparent);
+  margin: 28px auto;
+}
+
+.meta-row {
+  display: flex;
+  gap: 40px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.meta-item { text-align: center; }
+.meta-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--dim);
+  margin-bottom: 4px;
+}
+.meta-val {
+  font-size: clamp(12px, 1.4vw, 15px);
+  color: var(--muted);
+}
+
+/* iPad safe areas */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .slide {
+    padding-top: calc(56px + env(safe-area-inset-top));
+    padding-bottom: calc(48px + env(safe-area-inset-bottom));
+    padding-left: calc(72px + env(safe-area-inset-left));
+    padding-right: calc(72px + env(safe-area-inset-right));
+  }
+}
+</style>
+</head>
+<body>
+
+<div id="deck">
+
+  <!-- ─── SLIDE 01: TITLE ─── -->
+  <div class="slide bg-glow-amber active" data-section="Introduction">
+    <div class="slide-label">Internal Medicine Journal Club · 45 Minutes</div>
+    <div class="sp8"></div>
+    <h1>Factor XI Inhibitors:<br><em>Promise, Failure,<br>and Breakthrough</em></h1>
+    <div class="title-rule"></div>
+    <h3>Two Phase 3 trials. Opposite results.<br>One lesson that matters at the bedside.</h3>
+    <div class="sp24"></div>
+    <div class="meta-row">
+      <div class="meta-item"><div class="meta-label">Pre-reading</div><div class="meta-val">LILAC-TIMI 76 · NEJM 2024</div></div>
+      <div class="meta-item"><div class="meta-label">Also assign</div><div class="meta-val">OCEANIC-AF · NEJM 2024</div></div>
+      <div class="meta-item"><div class="meta-label">Duration</div><div class="meta-val">45 minutes</div></div>
+    </div>
+  </div>
+
+  <!-- ─── SLIDE 02: AGENDA ─── -->
+  <div class="slide" data-section="Agenda">
+    <div class="slide-label">Session Overview</div>
+    <h2>45 Minutes, One Narrative Arc</h2>
+    <div class="rule"></div>
+    <div class="sp16"></div>
+    <div class="agenda-track">
+      <div class="ag-seg" style="flex:5; background:var(--amber);"></div>
+      <div class="ag-seg" style="flex:4; background:#7c6bd0;"></div>
+      <div class="ag-seg" style="flex:8; background:#5e7ab8;"></div>
+      <div class="ag-seg" style="flex:5; background:#4a9ead;"></div>
+      <div class="ag-seg" style="flex:14; background:var(--amber2);"></div>
+      <div class="ag-seg" style="flex:5; background:var(--red);"></div>
+      <div class="ag-seg" style="flex:5; background:var(--green);"></div>
+      <div class="ag-seg" style="flex:3; background:var(--dim);"></div>
+    </div>
+    <div class="agenda-labels">
+      <div class="ag-label"><div class="ag-dot" style="background:var(--amber);"></div>Case (5m)</div>
+      <div class="ag-label"><div class="ag-dot" style="background:#7c6bd0;"></div>Context (4m)</div>
+      <div class="ag-label"><div class="ag-dot" style="background:#5e7ab8;"></div>Physiology (8m)</div>
+      <div class="ag-label"><div class="ag-dot" style="background:#4a9ead;"></div>Drugs (5m)</div>
+      <div class="ag-label"><div class="ag-dot" style="background:var(--amber2);"></div>Trials (14m)</div>
+      <div class="ag-label"><div class="ag-dot" style="background:var(--red);"></div>Reversal (5m)</div>
+      <div class="ag-label"><div class="ag-dot" style="background:var(--green);"></div>Inpatient (5m)</div>
+      <div class="ag-label"><div class="ag-dot" style="background:var(--dim);"></div>Close (4m)</div>
+    </div>
+    <div class="sp32"></div>
+    <div class="insight" style="font-size: clamp(14px,1.6vw,19px);">
+      The structure follows a <strong>three-act trial narrative</strong> — Phase 2 excitement → OCEANIC-AF failure → LILAC breakthrough. Understanding <em>why</em> one drug failed and one succeeded is the core lesson.
+    </div>
+  </div>
+
+  <!-- ─── SLIDE 03: OBJECTIVES ─── -->
+  <div class="slide" data-section="Objectives">
+    <div class="slide-label">Learning Objectives</div>
+    <h2>By the End of This Session</h2>
+    <div class="rule"></div>
+    <div class="sp16"></div>
+    <ul class="obj-list">
+      <li><div class="num">1</div>Explain why FXI is mechanistically distinct from FXa/thrombin as an anticoagulation target</li>
+      <li><div class="num">2</div>Distinguish <strong>FXI inhibition</strong> from <strong>FXIa inhibition</strong> — and why this difference predicted trial outcomes</li>
+      <li><div class="num">3</div>Critically appraise LILAC-TIMI 76 and OCEANIC-AF: design, endpoints, early stopping, noninferiority framing</li>
+      <li><div class="num">4</div>Articulate the class-wide absence of reversal agents and its inpatient implications</li>
+      <li><div class="num">5</div>Identify the highest-priority patient populations for FXI inhibitor candidacy</li>
+    </ul>
+  </div>
+
+  <!-- ─── SLIDE 04: OPENING CASE ─── -->
+  <div class="slide bg-glow-amber" data-section="Case">
+    <div class="slide-label">Opening Case — Keep This Patient in Mind</div>
+    <div class="sp12"></div>
+    <div class="case-box">
+      <div class="case-label">Inpatient Scenario</div>
+      <p>
+        A <strong>78-year-old woman</strong> with <strong>paroxysmal AF</strong> (CHA₂DS₂-VASc 5),
+        <strong>ESRD on hemodialysis</strong>, and a <strong>hospitalization 4 months ago
+        for a GI bleed from a cecal AVM</strong> is admitted with aspiration pneumonia.
+        Her apixaban was held at that admission. Hematology recommended indefinite hold.
+        Cardiology now requests a formal anticoagulation recommendation.
+      </p>
+    </div>
+    <div class="sp24"></div>
+    <ul class="prompt-list">
+      <li>Who would anticoagulate this patient <em>today?</em> Show of hands.</li>
+      <li>What single factor is most driving your decision — the stroke risk, the bleed history, or the renal function?</li>
+      <li>Would your answer change if the GI bleed was <em>12 months ago</em> instead of 4?</li>
+    </ul>
+  </div>
+
+  <!-- ─── SLIDE 05: CASE PIVOT ─── -->
+  <div class="slide bg-glow-amber" data-section="Case">
+    <div class="insight" style="font-size: clamp(17px, 2.2vw, 28px); padding: 36px 48px; max-width: 780px;">
+      An estimated <strong>3–4 million Americans</strong> meet guideline criteria for anticoagulation in AF but are deemed ineligible due to bleeding risk.<br><br>
+      This patient is not an edge case. She is the <em>target population</em>.<br><br>
+      <strong>What if a drug could change the threshold?</strong>
+    </div>
+  </div>
+
+  <!-- ─── SLIDE 06: WHY DOACs FAIL ─── -->
+  <div class="slide" data-section="Context">
+    <div class="slide-label muted">Why Current Anticoagulation Is Incomplete</div>
+    <h2>DOACs Solved Half the Problem</h2>
+    <div class="rule"></div>
+    <div class="sp16"></div>
+    <div class="cols cols-2" style="max-width:880px;">
+      <div class="card amber-border">
+        <div class="card-label amber">What DOACs Achieved</div>
+        <ul>
+          <li>~50% ICH reduction vs. warfarin</li>
+          <li>No INR monitoring required</li>
+          <li>Predictable pharmacokinetics</li>
+          <li>Reversal agents now available (FXa, IIa)</li>
+        </ul>
+      </div>
+      <div class="card red-border">
+        <div class="card-label red">What DOACs Couldn't Solve</div>
+        <ul>
+          <li>Major bleeding: ~2–4%/year in AF trials</li>
+          <li>GI bleeding elevated vs. warfarin (dabigatran, rivaroxaban, edoxaban)</li>
+          <li>ICH ~0.5–0.8%/year — reduced but not eliminated</li>
+          <li>No safe option for prior ICH, active GI disease, or ESRD</li>
+        </ul>
+      </div>
+    </div>
+    <div class="sp24"></div>
+    <div class="insight">
+      The problem is not drug-specific — it is <strong>mechanistic</strong>. Both FXa and thrombin are required for normal hemostasis. Blocking them reduces thrombosis but necessarily impairs the physiologic response to injury.
+    </div>
+  </div>
+
+  <!-- ─── SLIDE 07: THE FUNDAMENTAL QUESTION ─── -->
+  <div class="slide" data-section="Context">
+    <div class="insight" style="font-size: clamp(18px, 2.3vw, 30px); padding: 44px 52px; max-width: 820px;">
+      Is there a node in the coagulation cascade that contributes predominantly to <strong>pathologic thrombosis</strong> but is dispensable for <strong>normal hemostatic plug formation?</strong>
+    </div>
+    <div class="sp32"></div>
+    <h3>This question launched the FXI inhibitor program.</h3>
+  </div>
+
+  <!-- ─── SLIDE 08: CASCADE ─── -->
+  <div class="slide" data-section="Physiology">
+    <div class="slide-label">Coagulation Physiology</div>
+    <h2>FXI's Role in the Cascade</h2>
+    <div class="rule"></div>
+    <div class="sp16"></div>
+    <div class="cols cols-2" style="max-width: 900px; gap: 32px;">
+      <div>
+        <div class="card-label green" style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.18em; text-transform:uppercase; margin-bottom:14px; display:block;">Extrinsic (TF) Pathway — Primary Hemostasis</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div class="card" style="padding:12px 16px; font-size:clamp(12px,1.4vw,15px); color:var(--muted);">Tissue Factor + FVIIa<div style="font-size:0.85em; color:var(--dim); margin-top:2px;">Vascular injury → immediate activation</div></div>
+          <div style="text-align:center; color:var(--green); font-size:18px;">↓</div>
+          <div class="card" style="padding:12px 16px; font-size:clamp(12px,1.4vw,15px); color:var(--muted);">FXa + FVa → Thrombin (FIIa)<div style="font-size:0.85em; color:var(--dim); margin-top:2px;">Targeted by DOACs</div></div>
+          <div style="text-align:center; color:var(--green); font-size:18px;">↓</div>
+          <div class="card green-border" style="padding:12px 16px; font-size:clamp(12px,1.4vw,15px); color:var(--text);">Fibrin Clot — Primary Hemostatic Plug</div>
+        </div>
+      </div>
+      <div>
+        <div class="card-label amber" style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.18em; text-transform:uppercase; margin-bottom:14px; display:block;">Intrinsic (Contact) Pathway — Thrombosis Amplifier</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div class="card" style="padding:12px 16px; font-size:clamp(12px,1.4vw,15px); color:var(--muted);">FXII → FXIIa<div style="font-size:0.85em; color:var(--dim); margin-top:2px;">Contact activation — stasis, polyanions, foreign surfaces</div></div>
+          <div style="text-align:center; color:var(--amber); font-size:18px;">↓</div>
+          <div class="card amber-border" style="padding:12px 16px; font-size:clamp(12px,1.4vw,15px); color:var(--amber); font-weight:600;">FXI → FXIa ← DRUG TARGET<div style="font-size:0.85em; color:var(--muted); margin-top:2px; font-weight:400;">Amplification of thrombus propagation</div></div>
+          <div style="text-align:center; color:var(--amber); font-size:18px;">↓ 🎯</div>
+          <div class="card" style="padding:12px 16px; font-size:clamp(12px,1.4vw,15px); color:var(--muted);">FIXa + FVIIIa → FXa → Common pathway</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── SLIDE 09: HEMOPHILIA C ─── -->
+  <div class="slide" data-section="Physiology">
+    <div class="slide-label">The Natural Human Experiment</div>
+    <h2>Congenital FXI Deficiency<br><em>(Hemophilia C)</em></h2>
+    <div class="rule"></div>
+    <div class="sp12"></div>
+    <div class="physio-split">
+      <div class="physio-col hem">
+        <div class="phys-title">Effect on Hemostasis</div>
+        <ul>
+          <li>No spontaneous bleeding</li>
+          <li>Normal wound healing</li>
+          <li>Bleeding only with surgery/trauma — and only at high-fibrinolytic sites (dental, urologic, nasal)</li>
+          <li>Contrast with hemophilia A/B: spontaneous hemarthroses, life-threatening bleeds</li>
+          <li>Variable phenotype even among homozygotes</li>
+        </ul>
+      </div>
+      <div class="physio-col throm">
+        <div class="phys-title">Effect on Thrombosis</div>
+        <ul>
+          <li>Significantly reduced DVT and PE rates</li>
+          <li>Lower ischemic stroke risk — especially cardioembolic</li>
+          <li>Reduced prevalence of AF-related thrombus</li>
+          <li>Supported by Israeli population registry data (Salomon et al., Blood 2008)</li>
+          <li>Effect most pronounced in venous and cardioembolic (stasis-driven) events</li>
+        </ul>
+      </div>
+    </div>
+    <div class="sp16"></div>
+    <div class="insight">
+      Autosomal recessive · Common in Ashkenazi Jewish populations (~0.3%) · This population data is the entire pharmacological justification for the drug class
+    </div>
+  </div>
+
+  <!-- ─── SLIDE 10: KEY INSIGHT ─── -->
+  <div class="slide" data-section="Physiology">
+    <div class="insight" style="font-size: clamp(16px, 2vw, 24px); padding: 40px 52px; max-width: 840px;">
+      <strong>FXI inhibition can uncouple thrombosis from hemostasis</strong> — reducing clot propagation in pathologic contexts driven by stasis and contact activation, while preserving the extrinsic-pathway-driven primary hemostatic response to injury.<br><br>
+      This would be a <em>fundamentally different risk profile</em> from any current anticoagulant.
+    </div>
+    <div class="sp32"></div>
+    <ul class="prompt-list" style="max-width: 700px;">
+      <li>Why doesn't hemophilia C cause spontaneous bleeding like hemophilia A?</li>
+      <li>What types of thrombosis do you predict FXI inhibitors work best for — arterial, venous, cardioembolic?</li>
+    </ul>
+  </div>
+
+  <!-- ─── SLIDE 11: FXI vs FXIa ─── -->
+  <div class="slide" data-section="Drug Classes">
+    <div class="slide-label">Critical Mechanistic Distinction</div>
+    <h2>FXI Inhibition vs.<br><em>FXIa</em> Inhibition</h2>
+    <div class="rule"></div>
+    <div class="sp12"></div>
+    <div class="versus">
+      <div class="card green-border" style="padding: 24px 28px; text-align:left;">
+        <div class="card-label green" style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.15em; text-transform:uppercase; margin-bottom:14px; display:block;">FXI Inhibition (Upstream)</div>
+        <p style="font-size:clamp(13px,1.5vw,17px); color:var(--muted); line-height:1.6;">Targets the <strong style="color:var(--text);">zymogen before activation</strong>. Prevents FXI → FXIa conversion entirely. Complete upstream blockade of the amplification loop.<br><br><em style="color:var(--green);">Example: Abelacimab (monoclonal antibody)</em></p>
+      </div>
+      <div class="versus-divider">vs.</div>
+      <div class="card red-border" style="padding: 24px 28px; text-align:left;">
+        <div class="card-label red" style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.15em; text-transform:uppercase; margin-bottom:14px; display:block;">FXIa Inhibition (Downstream)</div>
+        <p style="font-size:clamp(13px,1.5vw,17px); color:var(--muted); line-height:1.6;">Competes at the <strong style="color:var(--text);">active site of the already-activated enzyme</strong>. Leaves unactivated FXI available. Partial suppression depending on dose and kinetics.<br><br><em style="color:var(--red);">Examples: Asundexian, Milvexian (small molecules)</em></p>
+      </div>
+    </div>
+    <div class="sp20"></div>
+    <div class="insight red" style="font-size:clamp(13px,1.6vw,18px);">
+      <strong>This distinction appears to have determined which drug class succeeded in Phase 3 and which failed.</strong> Keep it in mind as we walk through the trials.
+    </div>
+  </div>
+
+  <!-- ─── SLIDE 12: DRUG TABLE ─── -->
+  <div class="slide" data-section="Drug Classes">
+    <div class="slide-label">Agents in Development</div>
+    <h2>The FXI Inhibitor Landscape</h2>
+    <div class="rule"></div>
+    <div class="sp12"></div>
+    <table class="drug-table">
+      <thead>
+        <tr>
+          <th>Agent</th>
+          <th>Class / Target</th>
+          <th>Dosing</th>
+          <th>Key AF Trial</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="dn">Abelacimab</span><span class="dc">Sanofi / TIMI</span></td>
+          <td>mAb → FXI zymogen (upstream)</td>
+          <td>SC monthly · No renal clearance · t½ ~30 days</td>
+          <td>LILAC-TIMI 76</td>
+          <td><span class="badge green">Phase 3 ✓</span></td>
+        </tr>
+        <tr>
+          <td><span class="dn">Asundexian</span><span class="dc">Bayer</span></td>
+          <td>Small molecule → FXIa active site</td>
+          <td>PO QD · ~60% renal · t½ ~20h</td>
+          <td>OCEANIC-AF</td>
+          <td><span class="badge red">Stopped — Inferior</span></td>
+        </tr>
+        <tr>
+          <td><span class="dn">Milvexian</span><span class="dc">BMS / J&amp;J</span></td>
+          <td>Small molecule → FXIa active site</td>
+          <td>PO BID · Hepatic/renal · t½ ~12h</td>
+          <td>LIBREXIA-AF (ongoing)</td>
+          <td><span class="badge blue">Phase 3 ongoing</span></td>
+        </tr>
+        <tr>
+          <td><span class="dn">Fesomersen</span><span class="dc">Ionis / AZ</span></td>
+          <td>ASO → Reduces hepatic FXI synthesis</td>
+          <td>SC biweekly → monthly · Very long offset (weeks–months)</td>
+          <td>No AF trial yet</td>
+          <td><span class="badge amber">Phase 2 complete</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ─── SLIDE 13: ACT I ─── -->
+  <div class="slide" data-section="Trials">
+    <div class="slide-label">Trial Narrative</div>
+    <div class="act-marker" style="width:100%; max-width:700px;">
+      <div class="act-line"></div>
+      <div class="act-label">Act I · Phase 2 Promise</div>
+      <div class="act-line"></div>
+    </div>
+    <div class="sp16"></div>
+    <h2>The Excitement Builds</h2>
+    <div class="rule"></div>
+    <div class="sp12"></div>
+    <div class="cols cols-2" style="max-width:880px;">
+      <div class="card amber-border">
+        <div class="card-label amber">What Phase 2 Showed</div>
+        <ul>
+          <li>FXI/FXIa inhibition consistently reduced VTE in orthopedic prophylaxis vs. LMWH</li>
+          <li><strong>PACIFIC-AF</strong>: asundexian 50mg reduced bleeding vs. apixaban with efficacy signal intact</li>
+          <li>Consistent ICH reduction signal across agents</li>
+          <li>Phase 2 excitement was real — and warranted investigation</li>
+        </ul>
+      </div>
+      <div class="card red-border">
+        <div class="card-label red">The Cautionary Flags Missed</div>
+        <ul>
+          <li>VTE prophylaxis trials used <strong>asymptomatic venographic DVT</strong> as primary endpoint — a surrogate with poor track record</li>
+          <li>Phase 2 AF studies not powered for clinical stroke outcomes</li>
+          <li>Dose-finding for adequate FXIa suppression in stroke prevention was not validated</li>
+          <li>History lesson: ximelagatran had Phase 2 promise too</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── SLIDE 14: OCEANIC-AF DESIGN ─── -->
+  <div class="slide bg-glow-red" data-section="Trials">
+    <div class="slide-label red">Act II · The Reality Check</div>
+    <div class="act-marker" style="width:100%; max-width:700px;">
+      <div class="act-line" style="background: rgba(239,68,68,0.3);"></div>
+      <div class="act-label" style="color:var(--red);">OCEANIC-AF</div>
+      <div class="act-line" style="background: rgba(239,68,68,0.3);"></div>
+    </div>
+    <div class="sp8"></div>
+    <h2 class="red"><em>Asundexian</em> vs. Apixaban in AF</h2>
+    <div class="rule red"></div>
+    <div class="sp12"></div>
+    <div class="cols cols-2" style="max-width:860px;">
+      <div class="card">
+        <div class="card-label red">Trial Design</div>
+        <ul>
+          <li>Double-blind, double-dummy, active-controlled</li>
+          <li><strong>Noninferiority design</strong> vs. apixaban</li>
+          <li>CHA₂DS₂-VASc ≥2 (men) / ≥3 (women)</li>
+          <li>~14,000 patients · 41 countries</li>
+          <li>Primary efficacy: stroke or systemic embolism</li>
+          <li>Primary safety: major bleeding (ISTH)</li>
+        </ul>
+      </div>
+      <div class="card red-border">
+        <div class="card-label red">The Result</div>
+        <ul>
+          <li>Stopped early by DSMB at interim analysis</li>
+          <li>Asundexian <strong style="color:var(--red);">FAILED noninferiority</strong> for stroke/SE prevention</li>
+          <li>HR for stroke &gt;1.0, upper CI exceeds pre-specified margin</li>
+          <li>Major bleeding <span style="color:var(--green);">significantly lower</span> with asundexian ✓</li>
+          <li>Safety benefit could not offset efficacy failure</li>
+        </ul>
+      </div>
+    </div>
+    <div class="sp16"></div>
+    <div class="insight red">Bayer / NEJM–Circulation 2024 · Presented ESC 2024</div>
+  </div>
+
+  <!-- ─── SLIDE 15: OCEANIC CRITIQUE ─── -->
+  <div class="slide bg-glow-red" data-section="Trials">
+    <div class="slide-label red">Critical Appraisal — OCEANIC-AF</div>
+    <h2>What Should We Take From This?</h2>
+    <div class="rule red"></div>
+    <div class="sp16"></div>
+    <ul class="prompt-list red">
+      <li>Noninferiority design: is it possible asundexian was designed to demonstrate safety <em>while assuming</em> efficacy would hold? Was it set up to fail?</li>
+      <li>The trial was stopped for <strong>inferiority</strong> — not futility, not safety. How does this differ from trials stopped for benefit, and how should it affect interpretation?</li>
+      <li>Asundexian targets FXIa (active enzyme only). Could inadequate suppression of the FXI amplification loop explain the stroke signal? What dose would you test next?</li>
+      <li>Bleeding <em>was</em> reduced. Does this argue for dose optimization, or does it confirm FXIa inhibition is the wrong target for stroke prevention entirely?</li>
+    </ul>
+  </div>
+
+  <!-- ─── SLIDE 16: LILAC DESIGN ─── -->
+  <div class="slide bg-glow-green" data-section="Trials">
+    <div class="slide-label green">Act III · The Breakthrough</div>
+    <div class="act-marker" style="width:100%; max-width:700px;">
+      <div class="act-line" style="background: rgba(34,197,94,0.3);"></div>
+      <div class="act-label" style="color:var(--green);">LILAC-TIMI 76</div>
+      <div class="act-line" style="background: rgba(34,197,94,0.3);"></div>
+    </div>
+    <div class="sp8"></div>
+    <h2 class="green"><em>Abelacimab</em> vs. Rivaroxaban in AF</h2>
+    <div class="rule green"></div>
+    <div class="sp12"></div>
+    <div class="cols cols-2" style="max-width:880px;">
+      <div class="card">
+        <div class="card-label green">Trial Design</div>
+        <ul>
+          <li>Randomized, open-label, <strong>blinded adjudication</strong></li>
+          <li>CHA₂DS₂-VASc ≥2 / ≥3 · ~1,287 patients · ~1.8 years</li>
+          <li><strong>Enriched for high-bleeding-risk</strong>: prior GI bleed, prior ICH, age ≥80, CrCl 30–50, prior fall, frailty</li>
+          <li>Comparator: rivaroxaban 20mg daily (not apixaban)</li>
+          <li>Abelacimab 150mg SC monthly</li>
+          <li>Stopped early by DSMB — overwhelming safety benefit</li>
+        </ul>
+      </div>
+      <div class="card green-border">
+        <div class="card-label green">Primary Results</div>
+        <ul>
+          <li>Major/CRNM bleeding: <strong style="color:var(--green);">HR 0.38</strong> (95% CI 0.27–0.54) — 62% RRR</li>
+          <li>Major bleeding alone: <strong style="color:var(--green);">HR 0.33</strong> — 67% RRR</li>
+          <li>ARR: ~7.3%/year · <strong style="color:var(--green);">NNT ~14</strong> over ~1.8 years</li>
+          <li>ICH: <strong style="color:var(--green);">Near-eliminated</strong> in abelacimab arm</li>
+          <li>Stroke/SE: <strong>Non-inferior</strong> to rivaroxaban (HR 1.11, 95% CI 0.58–2.14)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="sp12"></div>
+    <div class="insight" style="font-size:clamp(12px,1.4vw,15px);">Bhatt DL et al. · NEJM 2024 · TIMI Study Group · NCT04755283</div>
+  </div>
+
+  <!-- ─── SLIDE 17: LILAC NUMBERS ─── -->
+  <div class="slide bg-glow-green" data-section="Trials">
+    <div class="slide-label green">LILAC-TIMI 76 — Key Numbers</div>
+    <h2>The Bleeding Reduction Is <em>Dramatic</em></h2>
+    <div class="rule green"></div>
+    <div class="sp24"></div>
+    <div class="stat-row">
+      <div class="stat-block">
+        <div class="big green">67%</div>
+        <div class="small">Relative reduction in major bleeding vs. rivaroxaban</div>
+      </div>
+      <div class="stat-block">
+        <div class="big green">NNT 14</div>
+        <div class="small">To prevent 1 major/CRNM bleed over ~1.8 years</div>
+      </div>
+      <div class="stat-block">
+        <div class="big">HR 0.33</div>
+        <div class="small">Major bleeding hazard ratio (95% CI 0.21–0.53)</div>
+      </div>
+      <div class="stat-block">
+        <div class="big" style="color:var(--blue); font-size:32px;">~Zero</div>
+        <div class="small">ICH events in abelacimab arm</div>
+      </div>
+    </div>
+    <div class="sp32"></div>
+    <div class="insight red" style="font-size:clamp(13px,1.6vw,18px);">
+      <strong>The caveat:</strong> Trial was stopped early. Early stopping inflates point estimates — a well-established statistical phenomenon. The NNT of 14 and HR of 0.33 are likely somewhat optimistic. Real-world data will show regression toward the mean.
+    </div>
+  </div>
+
+  <!-- ─── SLIDE 18: LILAC CRITIQUE ─── -->
+  <div class="slide bg-glow-green" data-section="Trials">
+    <div class="slide-label green">Critical Appraisal — LILAC-TIMI 76</div>
+    <h2>Pressing the Findings</h2>
+    <div class="rule green"></div>
+    <div class="sp16"></div>
+    <ul class="prompt-list">
+      <li>Stopped early for <em>safety</em> benefit. Statistical consequence? How does the winner's curse affect interpretation of HR 0.33?</li>
+      <li>Stroke/SE was non-inferior — but the CI is wide (0.58–2.14). The trial was not powered for efficacy superiority. What can we and <em>cannot</em> we conclude about stroke prevention vs. apixaban?</li>
+      <li>Population enriched for high-bleeding-risk. External validity to a general AF population? Would the NNT look the same in average-risk patients?</li>
+      <li>Open-label design (SC vs. oral). Rivaroxaban patients knew their drug. Any ascertainment bias for bleeding endpoints?</li>
+      <li>Monthly SC injection vs. daily oral. Will real-world adherence differences alter stroke prevention in ways the trial couldn't detect?</li>
+    </ul>
+  </div>
+
+  <!-- ─── SLIDE 19: REVERSAL ─── -->
+  <div class="slide bg-glow-red" data-section="Reversal">
+    <div class="slide-label red">⚠ Critical Inpatient Gap</div>
+    <h2>No Reversal Agents.<br><em>For Any Agent in This Class.</em></h2>
+    <div class="rule red"></div>
+    <div class="sp12"></div>
+    <div class="reversal-alert">
+      <div class="alert-title">What Does NOT Work — Class-Wide</div>
+      <ul>
+        <li>Andexanet alfa — designed for FXa inhibitors only, irrelevant here</li>
+        <li>Idarucizumab — dabigatran-specific, irrelevant here</li>
+        <li>4F-PCC (Kcentra) — not established; may not overcome mAb-mediated FXI inhibition</li>
+        <li>FFP — likely ineffective for abelacimab; possibly partial for small molecules</li>
+        <li>rFVIIa (NovoSeven) — theoretical bypass via extrinsic pathway; no clinical evidence</li>
+        <li>Abelacimab t½ = 30 days — drug effect persists <strong>3+ months</strong> post-dose</li>
+      </ul>
+    </div>
+    <div class="sp12"></div>
+    <div class="insight red" style="font-size:clamp(13px,1.6vw,18px);">
+      For life-threatening bleeding: supportive care + source control is primary. Consult hematology early. Management will be empirical. <strong>This must be weighed explicitly before prescribing.</strong>
+    </div>
+  </div>
+
+  <!-- ─── SLIDE 20: INPATIENT POPULATIONS ─── -->
+  <div class="slide" data-section="Inpatient">
+    <div class="slide-label">Hospital Medicine Implications</div>
+    <h2>Which Patients Are We Talking About?</h2>
+    <div class="rule"></div>
+    <div class="sp16"></div>
+    <div class="cols cols-3" style="max-width: 980px;">
+      <div class="card green-border">
+        <div class="card-label green">Tier 1 — Most Compelling</div>
+        <ul>
+          <li><strong style="color:var(--text);">AF + prior major GI bleed</strong> — the LILAC target population</li>
+          <li><strong style="color:var(--text);">AF + prior ICH</strong> — current standard is no anticoagulation; dramatic ICH reduction could be practice-changing</li>
+          <li><strong style="color:var(--text);">AF + ESRD</strong> — no renal clearance, no dose adjustment uncertainty</li>
+        </ul>
+      </div>
+      <div class="card amber-border">
+        <div class="card-label amber">Tier 2 — High Interest</div>
+        <ul>
+          <li>AF + frailty / high fall risk</li>
+          <li>AF + thrombocytopenia (oncology)</li>
+          <li>VTE prophylaxis in high-risk surgical patients</li>
+          <li>Patients who cannot tolerate oral medications</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-label muted">Tier 3 — Uncertain</div>
+        <ul>
+          <li>Mechanical heart valves — likely contraindicated (no data)</li>
+          <li>Antiphospholipid syndrome — FXI not primary pathway</li>
+          <li>Cancer-associated thrombosis — awaiting trials</li>
+          <li>AF + mild-moderate CKD — DOAC options adequate</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── SLIDE 21: RETURN TO CASE ─── -->
+  <div class="slide bg-glow-amber" data-section="Inpatient">
+    <div class="slide-label">Return to the Opening Case</div>
+    <div class="sp8"></div>
+    <div class="case-box">
+      <div class="case-label">Reconsidering with LILAC Data</div>
+      <p>78F · Paroxysmal AF · CHA₂DS₂-VASc 5 · <strong>ESRD on HD</strong> · <strong>GI bleed from cecal AVM, 4 months ago</strong> · Apixaban on indefinite hold</p>
+    </div>
+    <div class="sp20"></div>
+    <ul class="prompt-list">
+      <li>Abelacimab reduced major bleeding by 67% vs. rivaroxaban in patients <em>exactly like her</em> — prior GI bleed, ESRD, frailty. Does this change your decision?</li>
+      <li>No renal clearance, no dose adjustment. Does the ESRD factor disappear?</li>
+      <li>Monthly SC injection — realistic in a dialysis patient with clinic access?</li>
+      <li>She has no reversal option. Does that change your counseling? Your prescription?</li>
+    </ul>
+  </div>
+
+  <!-- ─── SLIDE 22: DEBATE ─── -->
+  <div class="slide" data-section="Debate">
+    <div class="slide-label">Structured Debate — Split the Room</div>
+    <h2>Motion: Adopt FXI Inhibitors as<br><em>First-Line</em> for High-Bleeding-Risk AF</h2>
+    <div class="rule"></div>
+    <div class="sp12"></div>
+    <div class="debate-split">
+      <div class="debate-col pro">
+        <div class="dtitle">Argue For</div>
+        <ul>
+          <li>67% bleeding reduction — no DOAC has achieved this</li>
+          <li>ICH near-eliminated — removes the most feared complication</li>
+          <li>High-bleeding-risk patients currently get nothing — any stroke reduction is a net gain</li>
+          <li>No renal dosing complexity for abelacimab</li>
+          <li>Monthly SC may improve adherence over daily pills</li>
+          <li>Decades of FXI deficiency data support long-term safety concept</li>
+        </ul>
+      </div>
+      <div class="debate-col con">
+        <div class="dtitle">Argue Against</div>
+        <ul>
+          <li>OCEANIC-AF proves the class is not monolithic — mechanism ≠ guaranteed efficacy</li>
+          <li>LILAC underpowered for stroke efficacy — we don't know if abelacimab matches apixaban</li>
+          <li>No reversal: institutional risk management, trauma, urgent surgery</li>
+          <li>Trial stopped early — effect size likely inflated</li>
+          <li>Cost, payer coverage, and injection infrastructure unknown</li>
+          <li>No long-term (&gt;2 year) safety data at population scale</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── SLIDE 23: TAKEAWAYS ─── -->
+  <div class="slide" data-section="Takeaways">
+    <div class="slide-label">Six Things to Remember</div>
+    <h2>Take-Home Points</h2>
+    <div class="rule"></div>
+    <div class="sp16"></div>
+    <div class="takeaway-grid">
+      <div class="takeaway-item"><div class="takeaway-n">01</div><div class="takeaway-t"><strong>The mechanism is real.</strong> Hemophilia C proves FXI inhibition reduces thrombosis with minimal spontaneous bleeding. The pharmacological rationale is sound.</div></div>
+      <div class="takeaway-item"><div class="takeaway-n">02</div><div class="takeaway-t"><strong>FXI ≠ FXIa.</strong> OCEANIC-AF's failure and LILAC's success suggest complete upstream FXI blockade is mechanistically superior to FXIa active-site competition for stroke prevention.</div></div>
+      <div class="takeaway-item"><div class="takeaway-n">03</div><div class="takeaway-t"><strong>LILAC's bleeding data is practice-changing — if it holds.</strong> 67% RRR and near-zero ICH would open anticoagulation to millions. Efficacy for stroke vs. apixaban is still not proven at superiority level.</div></div>
+      <div class="takeaway-item"><div class="takeaway-n">04</div><div class="takeaway-t"><strong>No reversal agents exist.</strong> Class-wide. Non-negotiable consideration for adoption. Abelacimab's 30-day half-life is the most acute problem.</div></div>
+      <div class="takeaway-item"><div class="takeaway-n">05</div><div class="takeaway-t"><strong>Early stopping inflates effect size.</strong> NNT 14 and HR 0.33 are likely optimistic. Real-world data will show regression toward the mean.</div></div>
+      <div class="takeaway-item"><div class="takeaway-n">06</div><div class="takeaway-t"><strong>Watch LIBREXIA-AF.</strong> If milvexian (FXIa) also fails, it confirms the FXI hypothesis. If it succeeds, dose optimization may matter more than target site.</div></div>
+    </div>
+  </div>
+
+  <!-- ─── SLIDE 24: CLOSE ─── -->
+  <div class="slide bg-glow-amber" data-section="Close">
+    <div class="slide-label">Questions & Discussion</div>
+    <div class="sp8"></div>
+    <h1>Thank you.</h1>
+    <div class="title-rule"></div>
+    <h3>Key evidence: LILAC-TIMI 76 · OCEANIC-AF · Salomon et al. Blood 2008</h3>
+    <div class="sp32"></div>
+    <div class="meta-row">
+      <div class="meta-item"><div class="meta-label">NEJM 2024</div><div class="meta-val">LILAC-TIMI 76 · Bhatt DL et al.</div></div>
+      <div class="meta-item"><div class="meta-label">NEJM/Circulation 2024</div><div class="meta-val">OCEANIC-AF Investigators</div></div>
+      <div class="meta-item"><div class="meta-label">Circulation 2024</div><div class="meta-val">Weitz JI et al. — FXI Review</div></div>
+      <div class="meta-item"><div class="meta-label">Blood 2008</div><div class="meta-val">Salomon O et al. — FXI Deficiency Data</div></div>
+    </div>
+    <div class="sp24"></div>
+    <div class="insight" style="font-size:clamp(12px,1.4vw,16px); padding:16px 24px;">
+      Full annotated reference document available at <strong>index.html</strong> in this repository — detailed trial cards, presenter notes, and inpatient management guidance.
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- UI ELEMENTS -->
+<div id="progress-bar" style="width:4.17%"></div>
+<div id="slide-counter"><span id="cur">1</span> / <span id="tot">24</span></div>
+<div class="section-pill" id="section-pill">Introduction</div>
+<div id="nav-prev" class="nav-zone"><div class="nav-arrow">‹</div></div>
+<div id="nav-next" class="nav-zone"><div class="nav-arrow">›</div></div>
+<button id="fullscreen-btn">⛶ Fullscreen</button>
+<a href="moderator.html" style="position:fixed; top:48px; right:18px; z-index:100; background:rgba(167,139,250,0.08); border:1px solid rgba(167,139,250,0.2); border-radius:8px; padding:6px 12px; font-family:'JetBrains Mono',monospace; font-size:11px; color:rgba(167,139,250,0.6); text-decoration:none; letter-spacing:0.05em;">📋 Moderator</a>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  let current = 0;
+  let animating = false;
+
+  const progressBar = document.getElementById('progress-bar');
+  const curEl = document.getElementById('cur');
+  const totEl = document.getElementById('tot');
+  const sectionPill = document.getElementById('section-pill');
+  totEl.textContent = total;
+
+  function goTo(index, dir) {
+    if (animating || index === current || index < 0 || index >= total) return;
+    animating = true;
+
+    const prev = slides[current];
+    const next = slides[index];
+
+    // set exit direction
+    prev.classList.add(dir > 0 ? 'exit-left' : '');
+    if (dir < 0) {
+      prev.style.transform = 'translateX(60px)';
+      prev.style.opacity = '0';
+    }
+    prev.classList.remove('active');
+
+    // prepare incoming
+    next.style.transform = dir > 0 ? 'translateX(60px)' : 'translateX(-60px)';
+    next.style.opacity = '0';
+    next.style.transition = 'none';
+    next.classList.add('active');
+
+    // force reflow
+    next.getBoundingClientRect();
+
+    next.style.transition = '';
+    next.style.transform = 'translateX(0)';
+    next.style.opacity = '1';
+
+    current = index;
+
+    // update progress
+    const pct = ((current + 1) / total * 100).toFixed(2);
+    progressBar.style.width = pct + '%';
+    curEl.textContent = current + 1;
+    sectionPill.textContent = slides[current].dataset.section || '';
+
+    setTimeout(() => {
+      prev.classList.remove('exit-left');
+      prev.style.transform = '';
+      prev.style.opacity = '';
+      prev.style.transition = '';
+      animating = false;
+    }, 480);
+  }
+
+  function next() { goTo(current + 1, 1); }
+  function prev() { goTo(current - 1, -1); }
+
+  // Keyboard
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); next(); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prev(); }
+    if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+  });
+
+  // Touch swipe
+  let touchStartX = 0, touchStartY = 0;
+  document.addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+      dx < 0 ? next() : prev();
+    }
+  }, { passive: true });
+
+  // Nav zones
+  document.getElementById('nav-next').addEventListener('click', next);
+  document.getElementById('nav-prev').addEventListener('click', prev);
+
+  // Fullscreen
+  const fsBtn = document.getElementById('fullscreen-btn');
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.() ||
+      document.documentElement.webkitRequestFullscreen?.();
+      fsBtn.textContent = '✕ Exit';
+    } else {
+      document.exitFullscreen?.() || document.webkitExitFullscreen?.();
+      fsBtn.textContent = '⛶ Fullscreen';
+    }
+  }
+  fsBtn.addEventListener('click', toggleFullscreen);
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement) fsBtn.textContent = '⛶ Fullscreen';
+  });
+
+  // ── BroadcastChannel: sync with presenter.html ──
+  const presenterChannel = new BroadcastChannel('fxi_slides');
+
+  // Notify presenter.html that slides are ready
+  presenterChannel.postMessage({ type: 'SLIDES_READY' });
+
+  // Listen for navigation commands from presenter.html
+  presenterChannel.addEventListener('message', e => {
+    if (e.data.type === 'GOTO' && typeof e.data.index === 'number') {
+      goTo(e.data.index, e.data.index > current ? 1 : -1);
+    }
+    if (e.data.type === 'PRESENTER_READY') {
+      presenterChannel.postMessage({ type: 'SLIDES_READY' });
+    }
+  });
+
+  // Notify presenter.html whenever this window advances
+  const _origGoTo = goTo;
+  function goTo(index, dir) {
+    _origGoTo(index, dir);
+    presenterChannel.postMessage({ type: 'SLIDE_CHANGED', index: current });
+  }
+</script>
+</body>
+</html>
