@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Presenter View — A Tale of Two Trials</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #0c0f15;
+  --surface:   #131921;
+  --surface2:  #1a2232;
+  --border:    rgba(255,255,255,0.07);
+  --amber:     #f0b429;
+  --amber-bg:  rgba(240,180,41,0.09);
+  --amber-dim: rgba(240,180,41,0.25);
+  --red:       #ef4444;
+  --red-bg:    rgba(239,68,68,0.09);
+  --green:     #22c55e;
+  --green-bg:  rgba(34,197,94,0.09);
+  --blue:      #60a5fa;
+  --purple:    #a78bfa;
+  --purple-bg: rgba(167,139,250,0.09);
+  --text:      #eef2f7;
+  --muted:     #7d8fa3;
+  --dim:       #3d5060;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 300;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ══ THREE-COLUMN LAYOUT ══ */
+#app {
+  display: grid;
+  grid-template-columns: 240px 1fr 260px;
+  height: 100%;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ══ SHARED PANEL STYLES ══ */
+.panel { display: flex; flex-direction: column; overflow: hidden; }
+.panel-hdr {
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+  flex-shrink: 0;
+}
+.hdr-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.hdr-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.scrollable {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.scrollable::-webkit-scrollbar { width: 3px; }
+.scrollable::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 2px; }
+
+/* ══ LEFT PANEL — Controls ══ */
+#panel-left {
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+}
+#panel-left .hdr-label { color: var(--purple); }
+
+/* Current slide info */
+#slide-info {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+#cur-section {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 4px;
+}
+#cur-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+  margin-bottom: 3px;
+}
+#cur-sub {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Progress */
+#progress-area {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+#prog-track {
+  height: 4px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+#prog-fill {
+  height: 100%;
+  background: var(--amber);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+#prog-nums {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--dim);
+}
+#prog-nums span { color: var(--muted); }
+
+/* Timer */
+#timer-area {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+#timer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+#timer-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  color: var(--text);
+}
+#timer-display.warn { color: var(--amber); }
+#timer-display.crit { color: var(--red); animation: blink 1s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.timer-btns { display: flex; gap: 6px; }
+.tbtn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 11px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-appearance: none;
+}
+.tbtn:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+.tbtn:active { background: rgba(255,255,255,0.12); }
+#timer-lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--dim);
+}
+
+/* Nav buttons */
+#nav-area {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.nav-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s;
+  -webkit-appearance: none;
+}
+.nav-btn:active { transform: scale(0.97); }
+.nav-icon { font-size: 20px; color: var(--text); }
+.nav-lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+#btn-next {
+  background: var(--amber-bg);
+  border-color: var(--amber-dim);
+}
+#btn-next .nav-icon { color: var(--amber); }
+#btn-next .nav-lbl { color: rgba(240,180,41,0.5); }
+#btn-next:hover { background: rgba(240,180,41,0.14); }
+
+/* Up next peek */
+#next-peek {
+  padding: 12px 16px;
+  flex: 1;
+  overflow: hidden;
+}
+.peek-lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--dim);
+  margin-bottom: 6px;
+}
+#next-section {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+#next-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 14px;
+  color: var(--muted);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* Connection indicator */
+#conn-bar {
+  border-top: 1px solid var(--border);
+  padding: 9px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+.conn-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+.dot-live { background: var(--green); box-shadow: 0 0 6px rgba(34,197,94,0.6); }
+.dot-wait { background: var(--amber); animation: blink 1.5s infinite; }
+.dot-off  { background: var(--red); }
+#conn-text { color: var(--muted); }
+
+/* ══ MIDDLE PANEL — Moderator Notes ══ */
+#panel-mid {
+  border-right: 1px solid var(--border);
+}
+#panel-mid .hdr-label { color: var(--purple); }
+#q-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px 10px;
+  color: var(--dim);
+}
+#notes-wrap { padding: 18px 20px 40px; }
+
+/* slide header in notes */
+.notes-slide-hdr {
+  margin-bottom: 18px;
+}
+.notes-slide-hdr h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  margin-bottom: 3px;
+}
+.notes-slide-hdr .nsub {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* General note card */
+.gen-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+.gen-card strong { color: var(--text); font-weight: 600; }
+.gen-card em { color: var(--amber); font-style: normal; }
+.gen-lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--dim);
+  margin-bottom: 7px;
+  display: block;
+}
+
+/* Question card */
+.q-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.qc-hdr {
+  background: var(--surface2);
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.qbadge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.qb-amber  { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(240,180,41,0.25); }
+.qb-red    { background: var(--red-bg);   color: var(--red);   border: 1px solid rgba(239,68,68,0.25); }
+.qb-green  { background: var(--green-bg); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
+.qb-blue   { background: rgba(96,165,250,0.1); color: var(--blue); border: 1px solid rgba(96,165,250,0.25); }
+.qb-purple { background: var(--purple-bg); color: var(--purple); border: 1px solid rgba(167,139,250,0.25); }
+.qc-q {
+  font-family: 'Playfair Display', serif;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--text);
+  line-height: 1.4;
+}
+.rrow {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: 10px;
+  align-items: flex-start;
+}
+.rrow:last-child { border-bottom: none; }
+.rlbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  padding-top: 1px;
+}
+.l-listen  { color: var(--blue); }
+.l-silent  { color: var(--amber); }
+.l-wrong   { color: var(--red); }
+.l-advance { color: var(--green); }
+.l-pivot   { color: var(--purple); }
+.rcont {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+  font-weight: 300;
+}
+.rcont strong { color: var(--text); font-weight: 600; }
+.rcont em { color: var(--amber); font-style: normal; font-weight: 500; }
+.say {
+  background: rgba(167,139,250,0.06);
+  border-left: 2px solid var(--purple);
+  border-radius: 0 5px 5px 0;
+  padding: 8px 11px;
+  margin-top: 7px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text);
+  line-height: 1.6;
+}
+.say::before { content:'\201C'; color:var(--purple); font-family:'Playfair Display',serif; font-size:15px; font-style:normal; }
+.say::after  { content:'\201D'; color:var(--purple); font-family:'Playfair Display',serif; font-size:15px; font-style:normal; }
+.ideal {
+  background: var(--green-bg);
+  border-radius: 5px;
+  padding: 7px 10px;
+  margin-top: 7px;
+  font-size: 11px;
+  color: rgba(34,197,94,0.85);
+  line-height: 1.55;
+}
+.ideal::before {
+  content: 'Ideal: ';
+  font-weight: 700;
+  color: var(--green);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+/* notes fade transition */
+#notes-wrap { transition: opacity 0.18s ease; }
+#notes-wrap.fade { opacity: 0; }
+
+/* ══ RIGHT PANEL — Slide strip ══ */
+#panel-right { background: var(--surface); }
+#panel-right .hdr-label { color: var(--amber); }
+#strip-scroll { padding: 10px; }
+.strip-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  background: #070a0f;
+  position: relative;
+}
+.strip-item.active { border-color: var(--amber); }
+.strip-item:hover  { border-color: rgba(255,255,255,0.2); }
+.strip-preview {
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  position: relative;
+}
+.strip-preview iframe {
+  position: absolute;
+  top: 0; left: 0;
+  width: 700px; height: 394px;
+  transform-origin: top left;
+  border: none;
+  pointer-events: none;
+}
+.strip-info {
+  padding: 7px 10px;
+  border-top: 1px solid var(--border);
+  background: var(--surface2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.strip-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--dim);
+}
+.strip-item.active .strip-num { color: var(--amber); }
+.strip-section {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Portrait blocker */
+#portrait-block {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 14px;
+  padding: 32px;
+  text-align: center;
+}
+.pb-icon { font-size: 52px; }
+.pb-text { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--muted); line-height: 1.6; }
+@media (orientation: portrait) {
+  #portrait-block { display: flex; }
+}
+</style>
+</head>
+<body>
+
+<div id="portrait-block">
+  <div class="pb-icon">📱</div>
+  <div class="pb-text">Rotate to landscape<br>for presenter view</div>
+</div>
+
+<div id="app">
+
+  <!-- ═══ LEFT: Controls ═══ -->
+  <div id="panel-left" class="panel">
+    <div class="panel-hdr">
+      <div class="hdr-label" style="color:var(--purple)">Presenter View</div>
+      <div class="hdr-title">A Tale of Two Trials</div>
+    </div>
+
+    <div id="slide-info">
+      <div id="cur-section">Introduction</div>
+      <div id="cur-title">Title Slide</div>
+      <div id="cur-sub">Slide 1 of 24</div>
+    </div>
+
+    <div id="progress-area">
+      <div id="prog-track"><div id="prog-fill" style="width:4.17%"></div></div>
+      <div id="prog-nums">
+        <span>Progress</span>
+        <span><span id="pn-cur">1</span> / <span id="pn-tot">24</span></span>
+      </div>
+    </div>
+
+    <div id="timer-area">
+      <div id="timer-row">
+        <div>
+          <div id="timer-display">45:00</div>
+          <div id="timer-lbl">Session timer</div>
+        </div>
+        <div class="timer-btns">
+          <button class="tbtn" id="t-start">▶</button>
+          <button class="tbtn" id="t-pause">⏸</button>
+          <button class="tbtn" id="t-reset">↺</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="nav-area">
+      <button class="nav-btn" id="btn-prev">
+        <span class="nav-icon">‹</span>
+        <span class="nav-lbl">Prev</span>
+      </button>
+      <button class="nav-btn" id="btn-next">
+        <span class="nav-icon">›</span>
+        <span class="nav-lbl">Next</span>
+      </button>
+    </div>
+
+    <div id="next-peek">
+      <div class="peek-lbl">Up next</div>
+      <div id="next-section"></div>
+      <div id="next-title"></div>
+    </div>
+
+    <div id="conn-bar">
+      <div class="conn-dot dot-wait" id="cdot"></div>
+      <div id="conn-text">Waiting for slides.html…</div>
+    </div>
+  </div>
+
+  <!-- ═══ MIDDLE: Moderator Notes ═══ -->
+  <div id="panel-mid" class="panel">
+    <div class="panel-hdr" style="display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div class="hdr-label" style="color:var(--purple)">Moderator Notes</div>
+        <div class="hdr-title">Discussion Guide</div>
+      </div>
+      <div id="q-badge">Slide 1</div>
+    </div>
+    <div class="scrollable">
+      <div id="notes-wrap">
+        <div id="notes-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ RIGHT: Slide strip ═══ -->
+  <div id="panel-right" class="panel">
+    <div class="panel-hdr">
+      <div class="hdr-label" style="color:var(--amber)">All Slides</div>
+      <div class="hdr-title">Jump to slide</div>
+    </div>
+    <div class="scrollable">
+      <div id="strip-scroll" id="strip"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// SLIDE METADATA
+// ══════════════════════════════════════════════
+const SLIDES = [
+  { section:'Introduction', title:'Opening Context',              sub:'QI project bridge — the tradeoff that FXI inhibitors may eliminate' },
+  { section:'Introduction', title:'Title Slide',                       sub:'A Tale of Two Trials — Factor XI Inhibitors, One Drug Class, Opposite Outcomes' },
+  { section:'Agenda',       title:'45-Minute Narrative Arc',            sub:'Session structure overview' },
+  { section:'Objectives',   title:'Learning Objectives',               sub:'Five outcomes for residents' },
+  { section:'Case',         title:'Opening Clinical Case',             sub:'78F · AF · ESRD · GI bleed 4mo ago' },
+  { section:'Case',         title:'Case Pivot',                        sub:'3–4M under-anticoagulated Americans' },
+  { section:'Context',      title:'Why DOACs Are Incomplete',          sub:'Half the problem solved' },
+  { section:'Context',      title:'The Fundamental Question',          sub:'Is there a safer target node?' },
+  { section:'Physiology',   title:'FXI in the Cascade',                sub:'Intrinsic vs. extrinsic distinction' },
+  { section:'Physiology',   title:'Hemophilia C — Natural Experiment', sub:'Congenital FXI deficiency data' },
+  { section:'Physiology',   title:'Key Physiology Discussion',         sub:'Stop and engage before advancing' },
+  { section:'Drug Classes', title:'FXI vs FXIa Inhibition',            sub:'Critical mechanistic distinction' },
+  { section:'Drug Classes', title:'The FXI Inhibitor Landscape',       sub:'Abelacimab · Asundexian · Milvexian · Fesomersen' },
+  { section:'Trials',       title:'Act I — Phase 2 Overview',          sub:'Orthopedic VTE trials + PACIFIC-AF · what was studied' },
+  { section:'Trials',       title:'Act I — Phase 2 Methodology',       sub:'Asymptomatic venographic DVT — what it is and why it was used' },
+  { section:'Trials',       title:'Act I — Phase 2 Critique',          sub:'The cautionary flags in retrospect' },
+  { section:'Trials',       title:'OCEANIC-AF Design',                 sub:'Population · comparator · NI framework · what would you expect?' },
+  { section:'Trials',       title:'OCEANIC-AF Results',                sub:'Inferiority stop · stroke failed · bleeding improved · the paradox' },
+  { section:'Trials',       title:'OCEANIC-AF Critical Appraisal',     sub:'4 questions · 8 minutes' },
+  { section:'Trials',       title:'AZALEA-TIMI 71 Design',              sub:'Phase 2b · safety primary endpoint · not powered for stroke efficacy' },
+  { section:'Trials',       title:'AZALEA-TIMI 71 Key Numbers',                 sub:'HR 0.33 · NNT 14 · Early stopping caveat' },
+  { section:'Trials',       title:'AZALEA-TIMI 71 Critical Appraisal',          sub:'5 questions · 6 minutes' },
+  { section:'Trials',       title:'Act IV — LILAC-TIMI 76',                sub:'Phase 3 · Ongoing · Results 2026 · The unanswered question' },
+  { section:'Reversal',     title:'No Reversal Agents',                sub:'Class-wide gap · Critical inpatient point' },
+  { section:'Inpatient',    title:'Inpatient Populations',             sub:'Tier 1 / 2 / 3 candidacy framework' },
+  { section:'Inpatient',    title:'Return to Opening Case',            sub:'Reconsidering with LILAC data' },
+  { section:'Debate',       title:'Structured Debate',                 sub:'Split the room · 4 minutes' },
+  { section:'Takeaways',    title:'Six Take-Home Points',              sub:'Synthesis and close' },
+  { section:'Close',        title:'Questions & Close',                 sub:'References and next steps' },
+];
+const TOTAL = SLIDES.length;
+
+// ══════════════════════════════════════════════
+// MODERATOR NOTES — keyed by 0-based index
+// ══════════════════════════════════════════════
+function buildNotes(i) {
+  const wrap = document.getElementById('notes-content');
+  const s = SLIDES[i];
+  let html = `<div class="notes-slide-hdr"><h2>${s.title}</h2><div class="nsub">${s.section} · ${s.sub}</div></div>`;
+
+  const notes = NOTES[i];
+  if (!notes) { wrap.innerHTML = html + `<div class="gen-card"><span class="gen-lbl">Presenter note</span>Present the slide content. No discussion questions on this slide — advance when ready.</div>`; return; }
+
+  if (notes.general) {
+    notes.general.forEach(g => {
+      html += `<div class="gen-card"><span class="gen-lbl">${g.lbl}</span>${g.text}</div>`;
+    });
+  }
+  if (notes.questions) {
+    notes.questions.forEach(q => {
+      html += `<div class="q-card"><div class="qc-hdr"><div class="qbadge ${q.badge}">${q.id}</div><div class="qc-q">${q.question}</div></div>`;
+      q.rows.forEach(r => {
+        html += `<div class="rrow"><div class="rlbl ${r.cls}">${r.lbl}</div><div class="rcont">${r.content}</div></div>`;
+      });
+      html += `</div>`;
+    });
+  }
+
+  document.getElementById('q-badge').textContent = `Slide ${i+1}${notes.questions ? ' · ' + notes.questions.length + 'Q' : ''}`;
+  wrap.innerHTML = html;
+}
+
+const NOTES = {
+  0: {
+    general: [
+      { lbl:'OPENING BRIDGE — say this verbatim', text:'<em>"Before we start — you all heard about the QI project yesterday. Aspirin versus LMWH. The reason that debate exists is that every antithrombotic agent we currently have forces a tradeoff between clot prevention and bleeding risk — whether it\'s blocking platelet activation like aspirin, or blocking the coagulation cascade like LMWH. You pick one and accept the cost of the other. What if that tradeoff wasn\'t inevitable? What if the coagulation cascade had a node you could block that prevents pathological clotting without touching physiologic hemostasis? That\'s the question this session is about. And the answer — or the beginning of one — came from two trials that reported opposite results within months of each other."</em>' },
+      { lbl:'THEN ADVANCE', text:'Do not pause for discussion here. Let it land and move forward immediately to the title slide. The question should sit unanswered in the room as you advance.' },
+    ]
+  },
+  1: {
+    general: [
+      { lbl:'SETUP — M3 iPad Air + Stage Manager', text:'<strong>Confirm setup before starting:</strong> (1) Plug in USB-C to HDMI adapter. (2) In Stage Manager, drag the <em>slides.html</em> Safari tab to the external display. (3) This presenter view stays on your iPad. (4) Tap Prev/Next here — slides advance on the projector automatically via BroadcastChannel sync.' },
+      { lbl:'OPENING', text:'Give residents 60–90 seconds to settle. The Dickens quote is on the title slide. Let them read it. Then advance.' },
+    ]
+  },
+  2: {
+    general: [
+      { lbl:'AGENDA — walk this aloud', text:'Point to each color segment. Emphasize the narrative arc explicitly: <em>"This is not a drug review. This is an investigation of why one drug failed and one succeeded — and what that tells us about mechanism, trial design, and future practice."</em>' },
+      { lbl:'START TIMER NOW', text:'Tap ▶ on the timer. The trial section (slides 13–18) is 14 minutes — your longest block. If physiology runs long, you can compress slide 13. Do not compress slides 15 or 18 — those are the critical appraisal core.' },
+    ]
+  },
+  3: {
+    general: [
+      { lbl:'OBJECTIVES', text:'Ask a resident to read Objective 2 aloud: FXI vs. FXIa distinction. Most cannot articulate this before the session. Say: <em>"Hold that one. By the end of today, this distinction will explain everything about why OCEANIC-AF failed and why AZALEA\'s results were so different."</em>' },
+    ]
+  },
+  4: {
+    general: [
+      { lbl:'BEFORE QUESTIONS', text:'Read the case aloud slowly — do not rush it. Let the complexity land. Three comorbidities, each individually problematic: AF with high CHA₂DS₂-VASc, ESRD on HD, major GI bleed 4 months ago. Then ask the questions below.' },
+    ],
+    questions: [
+      {
+        id:'Q1', badge:'qb-amber', question:'Who would anticoagulate this patient today? Show of hands.',
+        rows:[
+          { cls:'l-listen',  lbl:'Listen for', content:'A divided room — ideally 30–50% hands up. Unanimity either way means residents aren\'t engaging. You want disagreement.' },
+          { cls:'l-silent',  lbl:'If few hands', content:'<div class="say">I\'m going to hold that number. Remember: Cardiology put in a consult asking you to anticoagulate. That attending thinks it\'s worth considering. What would you need to believe to say yes?</div>' },
+          { cls:'l-silent',  lbl:'If near-unanimous yes', content:'<div class="say">That surprises me. She bled 4 months ago and hematology said indefinite hold. Walk me through your reasoning — because that attending is on the other end of this phone call.</div>' },
+          { cls:'l-advance', lbl:'Advance with', content:'<div class="say">Hold that number. We\'re coming back to this exact patient at the end. The answer may be different then.</div>' },
+        ]
+      },
+      {
+        id:'Q2', badge:'qb-amber', question:'What single factor is most driving your decision — stroke risk, bleed history, or renal function?',
+        rows:[
+          { cls:'l-listen', lbl:'Listen for', content:'Most will say <strong>bleeding history</strong>. Good. The deeper answer: all three are interconnected. CHA₂DS₂-VASc of 5 = ~7–9% annual stroke risk untreated. ESRD independently elevates both stroke and bleeding risk.' },
+          { cls:'l-silent', lbl:'If silent', content:'<div class="say">Make it concrete. Her CHA₂DS₂-VASc is 5 — roughly 7–9% annual stroke risk without anticoagulation. Her GI bleed was 4 months ago. Those two numbers have to fight each other. Which one wins in your head?</div>' },
+          { cls:'l-wrong',  lbl:'If someone says "renal"', content:'<div class="say">Good instinct. Apixaban is labeled for dialysis, so dosing is solvable. Does the renal concern actually disappear if you have a drug with no renal clearance?</div>' },
+          { cls:'l-advance',lbl:'Advance with', content:'<div class="say">This bind — real stroke risk vs. real bleeding risk — creates millions of under-anticoagulated AF patients. What if the bleeding risk equation could be fundamentally changed?</div>' },
+        ]
+      },
+      {
+        id:'Q3', badge:'qb-amber', question:'Would your answer change if the GI bleed was 12 months ago instead of 4?',
+        rows:[
+          { cls:'l-listen', lbl:'Listen for', content:'Recognition that <strong>there is no clean evidence-based cutoff</strong>. The 3/6/12-month thresholds are expert opinion, not RCT-derived. Cecal AVMs have ~25–35% annual rebleed rate independent of time elapsed.' },
+          { cls:'l-silent', lbl:'If all say "yes, restart at 12mo"', content:'<div class="say">Where does that threshold come from? Is there an RCT for 12 months being safer than 4? Or is it gestalt?</div>' },
+          { cls:'l-pivot',  lbl:'Key teaching point', content:'The cecal AVM matters more than the time elapsed. Rebleed risk from an untreated AVM is ~25–35%/year regardless of when the initial bleed occurred — unless the AVM has been treated.' },
+          { cls:'l-advance',lbl:'Advance with', content:'<div class="say">There\'s no clean evidence-based answer. That\'s precisely why these patients get nothing at all. Let\'s talk about what the coagulation cascade tells us about whether that has to remain true.</div>' },
+        ]
+      },
+    ]
+  },
+  5: {
+    general: [
+      { lbl:'PIVOT SLIDE', text:'No questions here — this is a statement slide. Read it aloud. Pause after <em>"3–4 million Americans."</em> Then say: <em>"This patient is not an edge case. She is the target population. What if a drug could change the threshold?"</em> Then advance.' },
+    ]
+  },
+  6: {
+    general: [
+      { lbl:'FRAMING — no questions', text:'Walk through the DOAC limitation table. Emphasize the key framing: the problem is <strong>mechanistic, not drug-specific</strong>. Both FXa and thrombin are required for normal hemostasis — blocking them necessarily impairs physiologic clotting. This sets up the FXI rationale on the next slide.' },
+    ]
+  },
+  7: {
+    general: [
+      { lbl:'THE PIVOT QUESTION', text:'Read the slide aloud slowly. Let it hang. This is the intellectual proposition that justifies the entire drug class. Ask rhetorical before advancing: <em>"Where would that target have to sit in the cascade?"</em> Then advance to physiology.' },
+    ]
+  },
+  8: {
+    general: [
+      { lbl:'CASCADE DIAGRAM', text:'Walk through left column (extrinsic) first — TF → FXa → thrombin → fibrin. That\'s the hemostatic plug. Then right column (intrinsic): FXII → FXI → FIXa. Emphasize: <strong>FXI amplifies. It does not initiate.</strong> In normal wound healing, the extrinsic pathway gives you the first plug. FXI sustains and propagates. In AF-related thrombus — no wound, no TF — stasis and contact activation drive the whole thing through the intrinsic pathway. That\'s why FXI is the right target.' },
+      { lbl:'ZYMOGEN DISTINCTION — KEY TEACHING POINT', text:'FXI circulates as an <strong>inactive zymogen</strong>. It requires proteolytic cleavage — by FXIIa or thrombin — to become FXIa, the active enzyme. This distinction explains the entire mechanistic difference between abelacimab and asundexian/milvexian:<br><br><strong>Abelacimab</strong> is a monoclonal antibody that binds FXI at the zymogen stage. It locks FXI in a conformation resistant to cleavage by FXIIa and thrombin. No cleavage = no FXIa generated. The enzyme never exists. Complete upstream blockade.<br><br><strong>Asundexian and milvexian</strong> are small molecules that competitively inhibit the <em>active site of FXIa</em> — the enzyme that has already been generated. Classic competitive inhibition: drug competes with substrate for active site access. Concentration-dependent. Can theoretically be outcompeted by high FXIa levels during massive prothrombotic stimuli.' },
+      { lbl:'HALF-LIFE AND THE REVERSAL CONNECTION', text:'FXI itself has a plasma half-life of ~60–80 hours — the liver continuously synthesizes new FXI. Abelacimab\'s half-life is ~4–5 weeks, which is why monthly SC dosing maintains continuous suppression: enough drug is present to bind and sequester incoming newly synthesized FXI throughout the dosing interval.<br><br>This same long half-life is the source of the reversal problem you\'ll cover on the reversal slide: if a patient on abelacimab arrives with a subdural hematoma 3 weeks after their injection, the drug will be present at near-peak levels for another month. FFP delivers FXI — but the drug immediately sequesters it. PCC partially helps. There is no specific reversal agent. <strong>Plant that seed here, return to it on the reversal slide.</strong>' },
+    ]
+  },
+  9: {
+    general: [
+      { lbl:'HEMOPHILIA C DATA', text:'Walk the two columns. The asymmetry is the teaching point: FXI deficiency dramatically reduces thrombosis while causing only mild, site-specific, trauma-provoked bleeding. Contrast explicitly with hemophilia A/B — spontaneous hemarthroses, life-threatening bleeds. Ask the questions below before advancing.' },
+      { lbl:'WHY HEMOPHILIA C ≠ HEMOPHILIA A — full explanation', text:'<strong>Hemophilia A</strong> (FVIII deficiency) knocks out the intrinsic tenase complex entirely. FVIII is the obligate cofactor for FIXa — without it, FIXa cannot activate FXa efficiently, and the entire intrinsic pathway collapses. The extrinsic pathway gives you a brief initial thrombin burst, but it is insufficient to generate the sustained thrombin needed to produce a stable, cross-linked fibrin clot under physiologic shear stress. Result: spontaneous hemarthroses, deep tissue bleeds, life-threatening hemorrhage with minor trauma.<br><br><strong>Hemophilia C</strong> (FXI deficiency) sits one step upstream. FXI feeds into FIXa, which then requires FVIII as a cofactor. Losing FXI reduces input into the intrinsic tenase complex — but the extrinsic pathway remains fully intact. In most tissues, extrinsic-pathway thrombin generation is sufficient for primary hemostatic plug formation. FXI is an <strong>amplifier, not an initiator</strong> — in normal wound healing it is largely redundant.<br><br><strong>Where FXI-deficient patients do bleed</strong> — dental extractions, urologic procedures, nasal surgery — reveals the one context where FXI amplification is non-redundant: sites with high local fibrinolytic activity. Urokinase in urine and tPA in oral mucosa lyse the initial extrinsic-pathway clot before propagation can compensate. Without FXI-driven amplification, the clot dissolves before it stabilizes.<br><br><strong>The AF connection:</strong> In AF-related thrombus — no wound, no TF exposure, no extrinsic pathway activation — stasis and contact activation drive clot formation entirely through the intrinsic pathway. FXI becomes essential rather than redundant. That is the mechanistic case for FXI as the right target in AF.' },
+    ],
+    questions: [
+      {
+        id:'Q4', badge:'qb-blue', question:'Why doesn\'t hemophilia C cause spontaneous bleeding like hemophilia A?',
+        rows:[
+          { cls:'l-listen', lbl:'Listen for', content:'Pathway architecture. FVIII/FIX are downstream of FXI in the intrinsic tenase complex. Losing them collapses the entire intrinsic pathway. Losing FXI specifically only removes the amplification loop — the extrinsic pathway and primary plug formation remain fully intact.' },
+          { cls:'l-silent', lbl:'If silent', content:'<div class="say">Think about where FVIII and FIX sit relative to FXI. If they\'re gone, what happens to the entire intrinsic pathway? Now compare: if FXI is gone, what still works?</div>' },
+          { cls:'l-silent', lbl:'Deeper cold call', content:'<div class="say">Why do FXI-deficient patients bleed with dental extractions and urologic surgery but not a laceration? What\'s special about those anatomic sites?</div><div class="ideal">High local fibrinolytic activity (urokinase in urine, tPA in oral mucosa) degrades the initial clot before propagation can compensate — that\'s where FXI-dependent amplification is needed.</div>' },
+          { cls:'l-advance', lbl:'Advance with', content:'<div class="say">FXI amplifies and sustains. In normal wound healing, the first extrinsic-pathway plug is usually enough. In AF — no wound, no TF — stasis drives everything through the intrinsic pathway. That\'s why it\'s the right target.</div>' },
+        ]
+      },
+    ]
+  },
+  10: {
+    questions: [
+      {
+        id:'Q5', badge:'qb-blue', question:'What types of thrombosis do you predict FXI inhibitors work best for — arterial, venous, or cardioembolic?',
+        rows:[
+          { cls:'l-listen',  lbl:'Listen for', content:'<strong>Venous and cardioembolic.</strong> Both are driven by stasis and contact activation — the intrinsic pathway. Arterial thrombosis is primarily plaque rupture → platelet activation → TF exposure → extrinsic pathway. FXI inhibitors would not be expected to address that mechanism.' },
+          { cls:'l-wrong',   lbl:'If someone says "arterial"', content:'<div class="say">Think about what drives an MI. Plaque rupture, TF exposure, platelet activation — which pathway? Now think about left atrial appendage thrombus in AF. Low-flow stasis environment. Which pathway is dominant there?</div>' },
+          { cls:'l-pivot',   lbl:'Flag for trials', content:'This mechanistic prediction makes OCEANIC-AF\'s failure more complex — the drug should work for cardioembolic stroke theoretically. The failure may be dose-dependent, not mechanism-dependent. Flag this before moving to the trials.' },
+          { cls:'l-advance', lbl:'Advance with', content:'<div class="say">Venous and cardioembolic — correct. AF is theoretically the ideal indication. So let\'s talk about what actually happened when we tested these drugs in AF patients. The results were not what anyone expected.</div>' },
+        ]
+      },
+    ]
+  },
+  11: {
+    general: [
+      { lbl:'FXI vs FXIa — KEY SLIDE', text:'This is the mechanistic setup for the trial results. Make residents articulate the distinction before you advance. Ask: <em>"If abelacimab blocks FXI the zymogen, and asundexian blocks FXIa the active enzyme — what does that mean for the degree of pathway suppression at trough plasma levels?"</em> The answer predicts the trial outcomes.' },
+    ]
+  },
+  12: {
+    general: [
+      { lbl:'PRONUNCIATION GUIDE', text:'Say each name aloud before walking the table — residents will not ask but will mispronounce if you don\'t model it:<br><br><strong>Abelacimab</strong> — ah-BEL-ah-SIM-ab (stress on 2nd syllable)<br><strong>Asundexian</strong> — ah-SUN-dex-ee-an (stress on 2nd syllable)<br><strong>Milvexian</strong> — mil-VEX-ee-an (stress on 2nd syllable)<br><strong>Fesomersen</strong> — feh-SOM-er-sen (stress on 2nd syllable)<br><br>Pattern worth noting aloud: all four stress the second syllable. The "-mab" suffix on abelacimab identifies it as a monoclonal antibody — the only antibody in the class, everything else is a small molecule or ASO.' },
+      { lbl:'DRUG TABLE', text:'Walk each row. Emphasize three things: (1) Only abelacimab has Phase 3 data so far. (2) Asundexian Phase 3 was stopped for inferiority. (3) Milvexian — also FXIa — is ongoing in LIBREXIA. Its result will tell us whether the OCEANIC-AF failure was dose-specific or class-wide for FXIa inhibitors.' },
+    ]
+  },
+  13: {
+    general: [
+      { lbl:'ACT I — OVERVIEW', text:'Three columns — walk quickly. This slide orients the room to what was actually studied before you critique it. Key framing: <em>"Before we judge these trials, we need to know what they were trying to do."</em> Emphasize that multiple agents were tested across two contexts: orthopedic VTE prophylaxis and AF bleeding. The excitement came from both.' },
+    ]
+  },
+  14: {
+    general: [
+      { lbl:'METHODOLOGY — ASYMPTOMATIC VENOGRAPHIC DVT', text:'This slide is the methodological foundation for the critique that follows. Walk both columns carefully. Key points to land verbally:<br><br>1. Venography is done at a <strong>fixed timepoint regardless of symptoms</strong> — you are actively hunting for filling defects in patients who feel fine.<br>2. Most detected events are non-occlusive distal DVTs — clinically silent, uncertain natural history.<br>3. The endpoint was chosen for statistical convenience — more events = smaller sample size needed = cheaper, faster Phase 2.<br>4. This is not unique to FXI inhibitors — multiple drug classes looked excellent on venographic DVT and then failed to reduce symptomatic outcomes.<br><br>Ask the room: <em>"If a drug reduces asymptomatic filling defects on venography but has no effect on symptomatic PE or death — has it done anything for the patient?"</em> Let them sit with that before advancing.' },
+    ]
+  },
+  15: {
+    general: [
+      { lbl:'ACT I — CRITIQUE', text:'Now the critique lands — because they understand the methodology. Frame explicitly: <em>"In retrospect, the cautionary flags were there. Nobody flagged them loudly enough."</em> Walk the pro column quickly, spend more time on the right column. The venographic DVT point now has context. The dose-finding gap for FXIa suppression in stroke prevention is the most clinically important flag — it directly explains OCEANIC-AF.' },
+    ]
+  },
+  16: {
+    general: [
+      { lbl:'OCEANIC-AF DESIGN', text:'Give residents 60 seconds to read the slide silently. Then ask before advancing: <em>"What does noninferiority mean in this context — and what has to be true about the drug before you even enroll the first patient?"</em><br><br>Key points:<br>1. <strong>Noninferiority design</strong> — the bar is "not meaningfully worse than apixaban." Not better, not equivalent. Just not unacceptably worse. That is a lower bar than superiority.<br>2. The pre-specified NI margin defines what "unacceptably worse" means numerically. If the upper bound of the HR confidence interval crosses that margin, NI fails.<br>3. Double-dummy: patients took both an active drug and a placebo matching the other arm. Rigorous blinding.<br>4. 14,000 patients, 41 countries. If this fails, it is not a sample size problem.' },
+    ]
+  },
+  17: {
+    general: [
+      { lbl:'OCEANIC-AF RESULTS — DSMB AND STOPPING RULES', text:'Before revealing the result, ask: <em>"Based on the mechanism and Phase 2 data — what do you predict happened?"</em> Let them commit. Then advance.<br><br><strong>What is the DSMB?</strong> The Data Safety Monitoring Board — sometimes called DMC or IDMC — is an independent committee of statisticians, clinicians, and ethicists with no stake in the trial outcome. They are the only people with access to unblinded interim data while the trial is ongoing. Investigators and sponsors remain blinded. They meet at pre-specified intervals and can recommend stopping early.<br><br><strong>Three reasons a DSMB stops a trial:</strong><br>1. <strong>Benefit</strong> — treatment working so well it is unethical to continue giving comparator or placebo. AZALEA-TIMI 71 was stopped for this reason.<br>2. <strong>Futility</strong> — the drug almost certainly won\'t meet its endpoint even if the trial completes. Probabilistic statement about the future.<br>3. <strong>Inferiority (harm)</strong> — the drug is actively causing more harm than the comparator. Observed finding about what already happened. This is what stopped OCEANIC-AF.<br><br><strong>The critical distinction:</strong> Futility says "this probably won\'t work." Inferiority says "this is actively worse." DSMBs require an overwhelming signal before stopping for inferiority — the bar is high. If they stopped, what they saw was unambiguous. The true inferiority may be even larger than the observed point estimate.<br><br><strong>The paradox to land:</strong> Bleeding was genuinely better. The drug worked as a safer anticoagulant. It failed as an effective one. Ask: <em>"What does that tell you about the relationship between FXIa inhibition, bleeding, and stroke?"</em>' },
+    ]
+  },
+  18: {
+    questions: [
+      {
+        id:'Q6', badge:'qb-red', question:'Noninferiority design: is it possible asundexian was designed to demonstrate safety while assuming efficacy would hold?',
+        rows:[
+          { cls:'l-listen', lbl:'Listen for', content:'Noninferiority trials assume the experimental drug is <em>probably as good</em> as the comparator — they\'re testing whether it\'s not <strong>unacceptably worse</strong>. OCEANIC-AF assumed Phase 2 signal was sufficient to justify that assumption. It was not.' },
+          { cls:'l-silent', lbl:'If silent', content:'<div class="say">In a noninferiority trial, what has to be true about the experimental drug before you even start enrolling? What makes that design ethical?</div><div class="ideal">You have to believe the drug is probably effective. If you suspected meaningful inferiority, a superiority or placebo-controlled design would be more appropriate.</div>' },
+          { cls:'l-advance', lbl:'Advance with', content:'<div class="say">The fact that OCEANIC-AF failed even this relatively low bar tells you something — the inferiority was not borderline. The DSMB saw a clear and unambiguous signal.</div>' },
+        ]
+      },
+      {
+        id:'Q7', badge:'qb-red', question:'OCEANIC-AF was stopped for inferiority. How does this differ from trials stopped for benefit?',
+        rows:[
+          { cls:'l-listen', lbl:'Listen for', content:'Trials stopped for <strong>benefit</strong> inflate apparent effect size (winner\'s curse). Trials stopped for <strong>inferiority</strong> are more reliable — DSMBs require overwhelming evidence before stopping for harm. If anything, the true inferiority may be larger than the point estimate.' },
+          { cls:'l-wrong',  lbl:'If someone says "we can\'t trust the result"', content:'<div class="say">That concern applies to trials stopped for benefit. Here, stopping for inferiority is actually conservative. Can you construct a scenario where early stopping would inflate a negative result?</div>' },
+          { cls:'l-advance',lbl:'Advance with', content:'<div class="say">When a DSMB stops for inferiority, they\'re saying: continuing would be unethical. This result is not ambiguous. Asundexian at 50mg does not adequately prevent stroke in AF. Now — why not?</div>' },
+        ]
+      },
+      {
+        id:'Q8', badge:'qb-red', question:'Asundexian targets FXIa only. What mechanistic explanation accounts for inadequate stroke prevention?',
+        rows:[
+          { cls:'l-listen', lbl:'Listen for', content:'Incomplete suppression of the amplification loop. FXIa inhibitors leave FXI zymogen available. At trough plasma levels (~18–22h after a once-daily dose), partial FXIa activity may be sufficient to drive left atrial appendage thrombus in high-risk AF. Active-site competition is concentration-dependent — once drug levels fall, FXI activation resumes.' },
+          { cls:'l-silent', lbl:'Cold call', content:'<div class="say">Asundexian has a t½ of ~20 hours, dosed once daily. What happens to FXIa suppression at hour 18, 20, 22? Is complete suppression maintained throughout the dosing interval?</div>' },
+          { cls:'l-pivot',  lbl:'Abelacimab contrast', content:'<div class="say">Abelacimab binds the FXI zymogen and blocks activation entirely. No partial suppression at trough — FXI itself is unavailable. If you block the substrate, competitive inhibition kinetics are irrelevant.</div>' },
+          { cls:'l-advance',lbl:'Advance with', content:'<div class="say">A different drug, different mechanism, tested in a harder patient population at the same time. Let\'s look at what happened.</div>' },
+        ]
+      },
+      {
+        id:'Q9', badge:'qb-red', question:'Asundexian did reduce bleeding. Does this argue for dose optimization, or confirm FXIa inhibition is the wrong target?',
+        rows:[
+          { cls:'l-listen', lbl:'Listen for', content:'Both interpretations are defensible. Bleeding reduction proves biological activity at the FXI pathway. But higher doses to improve stroke prevention could erase the bleeding advantage — the therapeutic window may be too narrow for any FXIa active-site inhibitor.' },
+          { cls:'l-silent', lbl:'If discussion stalls', content:'<div class="say">If you double the dose to improve trough FXIa suppression, what happens to peak-level bleeding risk? Is there a dose where you get both — or does the window not exist?</div>' },
+          { cls:'l-pivot',  lbl:'Watch LIBREXIA', content:'<div class="say">Milvexian — also FXIa — is in Phase 3. If it fails too, the target site is wrong. If it succeeds, dose and PK matter more than target. LIBREXIA will answer this question.</div>' },
+          { cls:'l-advance',lbl:'Advance with', content:'<div class="say">We don\'t know yet. What we do know: a drug targeting FXI upstream, not FXIa downstream, was tested simultaneously in a smaller, harder population. Here is what happened.</div>' },
+        ]
+      },
+    ]
+  },
+  19: {
+    general: [
+      { lbl:'AZALEA-TIMI 71 DESIGN', text:'Before advancing to results, ask the room two questions: <em>"What was the primary endpoint of this trial?"</em> (bleeding — a safety endpoint) and <em>"What was it explicitly not powered for?"</em> (stroke efficacy).<br><br>Key design features to emphasize:<br>1. <strong>Open-label</strong> — patients knew whether they were getting an injection or a pill. Blinded adjudication of endpoints partially mitigates this, but ascertainment bias for bleeding remains possible.<br>2. <strong>Enriched population</strong> — this is not a general AF population. Prior GI bleed, prior ICH, age ≥80, CrCl 30–50, frailty. These are the patients who currently get nothing because existing anticoagulants are too dangerous.<br>3. <strong>Phase 2b</strong> — designed to select a dose for Phase 3 (LILAC-TIMI 76) and establish a bleeding signal. Not a definitive efficacy trial.<br>4. Comparator is rivaroxaban, not apixaban. Ask: <em>"Does that choice matter for interpreting the results?"</em>' },
+    ]
+  },
+  20: {
+    general: [
+      { lbl:'LILAC DESIGN', text:'Ask a resident to summarize the enrichment criteria — this is what makes the population special. Prior GI bleed, prior ICH, age ≥80, CrCl 30–50, prior fall, frailty. This is not a typical AF trial population. These are patients currently getting <strong>nothing</strong>. Then advance to numbers.' },
+    ]
+  },
+  21: {
+    general: [
+      { lbl:'THE NUMBERS', text:'Give residents 30 seconds to look at the stats. Then say: <em>"HR 0.33. NNT 14. ICH near-eliminated. These are extraordinary numbers. The question is whether you should believe them."</em> Then advance to appraisal.' },
+    ]
+  },
+  22: {
+    questions: [
+      {
+        id:'Q10', badge:'qb-green', question:'Trial stopped early for benefit — how does the winner\'s curse affect HR 0.33?',
+        rows:[
+          { cls:'l-listen', lbl:'Listen for', content:'Early stopping inflates effect size. The observed HR is systematically larger than the true effect because the trial stopped when data happened to look particularly favorable. HR 0.33 is likely an overestimate — real-world evidence will probably show HR ~0.45–0.55.' },
+          { cls:'l-silent', lbl:'Analogy cold call', content:'<div class="say">Flip a coin 10 times. Stop counting when you hit 7 heads. If you repeat that 1,000 times, what\'s the average number of heads across only the trials you stopped? Is it 5, or is it higher? That\'s the winner\'s curse.</div>' },
+          { cls:'l-pivot',  lbl:'Clinical framing', content:'<div class="say">This doesn\'t mean the drug doesn\'t work. Even a real-world HR of 0.5 — 50% bleeding reduction — is extraordinary. It means the press release number is optimistic, and real-world performance will likely be somewhat less dramatic.</div>' },
+          { cls:'l-advance',lbl:'Advance with', content:'<div class="say">Every major drug class went through this. SGLT2 inhibitors, DOACs, statins — all showed somewhat inflated effect sizes in early trials that regressed in broader populations. The question is whether the true effect, whatever it is, remains clinically meaningful.</div>' },
+        ]
+      },
+      {
+        id:'Q11', badge:'qb-green', question:'Stroke/SE was non-inferior, CI 0.58–2.14. What can and cannot we conclude?',
+        rows:[
+          { cls:'l-listen', lbl:'Listen for', content:'The trial was <strong>not powered for stroke efficacy</strong>. ~1,287 patients, ~1.8 years, high-bleeding-risk population with low absolute event rates. CI of 0.58–2.14 means abelacimab could substantially improve or worsen stroke risk vs. rivaroxaban — we cannot distinguish.' },
+          { cls:'l-wrong',  lbl:'If residents say "non-inferior = it works"', content:'<div class="say">Look at the upper CI: 2.14. That means abelacimab could more than double stroke risk vs. rivaroxaban and we couldn\'t rule it out with this trial\'s power. Is that the same level of evidence we used to approve apixaban?</div>' },
+          { cls:'l-pivot',  lbl:'Key distinction', content:'LILAC\'s bleeding data is practice-changing. Its efficacy data is hypothesis-generating. These are not the same thing. An FDA approval in most jurisdictions will require a larger powered efficacy trial.' },
+          { cls:'l-advance',lbl:'Advance with', content:'<div class="say">We know abelacimab dramatically reduces bleeding. We do not know if it adequately prevents stroke compared to apixaban. That trial has not been done. This is the single most important sentence to say when anyone asks if this drug works.</div>' },
+        ]
+      },
+      {
+        id:'Q12', badge:'qb-green', question:'Population enriched for high-bleeding-risk. How does this affect external validity?',
+        rows:[
+          { cls:'l-listen', lbl:'Listen for', content:'The NNT of 14 comes from a population with elevated baseline bleeding rates. In average-risk AF patients with lower baseline bleeding rates, the ARR is smaller and NNT is higher. The drug\'s risk-benefit profile is most compelling in exactly who was tested.' },
+          { cls:'l-silent', lbl:'Numbers prompt', content:'<div class="say">If baseline bleeding is 10%/year and you reduce it by 67%, ARR is 6.7%, NNT ~15. Apply the same 67% RRR to a baseline of 3%/year. What\'s the NNT now? What does that tell you about patient selection?</div>' },
+          { cls:'l-advance',lbl:'Advance with', content:'<div class="say">The drug was designed for, tested in, and will be most beneficial to patients with high baseline bleeding risk — the patients currently getting nothing at all. Patient selection will matter as much as the drug itself.</div>' },
+        ]
+      },
+      {
+        id:'Q13', badge:'qb-green', question:'Open-label design — does this introduce ascertainment bias for bleeding endpoints?',
+        rows:[
+          { cls:'l-listen', lbl:'Listen for', content:'Open-label creates performance and detection bias risk. <strong>Adjudication was blinded</strong> — endpoint committee reviewed outcomes without knowing treatment assignment. But the committee only adjudicates what gets reported. Differential reporting at the patient/site level is possible.' },
+          { cls:'l-silent', lbl:'If no one mentions blinded adjudication', content:'<div class="say">The paper specifies blinded adjudication. What does that mean specifically — who is blinded, at what stage? If a rivaroxaban patient has minor rectal bleeding and doesn\'t call their coordinator, does blinded adjudication protect against that bias?</div>' },
+          { cls:'l-advance',lbl:'Advance with', content:'<div class="say">The concern is real and acknowledged. But HR 0.33 is large enough that moderate ascertainment bias is unlikely to explain it entirely. If the true effect were HR 0.7, this critique would be devastating. At HR 0.33, you need substantial differential reporting to nullify the result.</div>' },
+        ]
+      },
+      {
+        id:'Q14', badge:'qb-green', question:'Monthly SC injection vs. daily oral — real-world adherence implications?',
+        rows:[
+          { cls:'l-listen', lbl:'Listen for', content:'This cuts both ways. Monthly dosing could improve adherence — one missed injection is less consequential than missing daily pills. But injection requires a healthcare contact point not all patients have. In dialysis patients, monthly HD visit = natural administration opportunity.' },
+          { cls:'l-pivot',  lbl:'The long t½ flip', content:'<div class="say">The same 30-day half-life that creates the reversal problem is actually a feature for adherence. A missed injection doesn\'t immediately expose the patient to stroke risk — FXI remains suppressed for weeks. Compare to missing one dose of apixaban: drug-level gap within 24 hours.</div>' },
+          { cls:'l-advance',lbl:'Advance with', content:'<div class="say">With the trial data in hand, let\'s return to the patient we started with. Has anything changed?</div>' },
+        ]
+      },
+    ]
+  },
+  23: {
+    general: [
+      { lbl:'REVERSAL — CRITICAL SLIDE', text:'Read the alert list aloud. Every agent, explicitly. Then say: <em>"This is a class-wide gap as of early 2026. It must be weighed explicitly before prescribing, and it must be in your consent conversation."</em> The most acute clinical scenario: abelacimab patient presents with subdural hematoma 3 weeks after injection. t½ = 30 days. There is no reversal. Walk the room through that scenario.' },
+      { lbl:'MECHANISM OF THE REVERSAL PROBLEM', text:'Tie back to what you covered on the cascade slide. Abelacimab binds FXI the zymogen — not FXIa. This means:<br><br>1. <strong>FFP</strong> delivers FXI protein — but abelacimab is still circulating and immediately sequesters it. You are pouring FXI into a system where the antibody is waiting to bind it.<br>2. <strong>4-factor PCC</strong> contains FXI and partially overcomes this — some FXI may escape sequestration at very high concentrations — but this is unsupported by clinical data.<br>3. <strong>Andexanet alfa</strong> is an FXa decoy — completely wrong mechanism, irrelevant here.<br>4. <strong>Idarucizumab</strong> reverses dabigatran (anti-FIIa) — also irrelevant.<br>5. <strong>Waiting for clearance</strong>: t½ ~4–5 weeks means the drug is effectively permanent on any surgical timescale.<br><br>The only partial options are high-dose PCC, antifibrinolytics (tranexamic acid), and local surgical hemostasis. None are validated for this specific mechanism. This is the gap.' },
+    ]
+  },
+  24: {
+    general: [
+      { lbl:'INPATIENT POPULATIONS', text:'Walk the three tiers. Tier 1 is where the evidence is strongest and the unmet need is highest. Tier 3 is where residents often want to extend the drug beyond its evidence base. Be explicit: mechanical heart valves are almost certainly contraindicated based on DOAC precedent — there is no trial and the mechanism does not favor use here.' },
+    ]
+  },
+  25: {
+    questions: [
+      {
+        id:'Q15', badge:'qb-amber', question:'Abelacimab reduced major bleeding 67% in patients like her. Does this change your decision?',
+        rows:[
+          { cls:'l-listen', lbl:'Listen for', content:'A shift in the hands from slide 4. If more residents say yes, the session has worked. Ideally a resident can articulate <em>why</em> — not just "lower bleeding" but specifically: ESRD, prior GI bleed, high CHA₂DS₂-VASc = the exact LILAC enrichment criteria.' },
+          { cls:'l-silent', lbl:'If still resistant', content:'<div class="say">Her annual untreated stroke risk is ~7–9%. If abelacimab provides non-inferior stroke protection at 67% lower bleeding than rivaroxaban, put numbers on the risk-benefit. What is the expected ratio of bleeds prevented to strokes avoided?</div>' },
+          { cls:'l-caution', lbl:'If everyone says "obvious yes"', content:'<div class="say">Hold on — we still don\'t know if abelacimab prevents stroke as well as apixaban. LILAC compared to rivaroxaban and was powered for bleeding, not stroke. What are you actually promising this patient?</div>' },
+          { cls:'l-advance', lbl:'Advance with', content:'<div class="say">The question isn\'t abelacimab vs. apixaban in a typical AF patient. It\'s abelacimab vs. nothing — because nothing is what this patient is currently getting. That reframe changes the math entirely.</div>' },
+        ]
+      },
+      {
+        id:'Q16', badge:'qb-amber', question:'She\'s on HD. No renal clearance. Does the ESRD factor disappear?',
+        rows:[
+          { cls:'l-listen', lbl:'Listen for', content:'Partially. No renal clearance removes dosing uncertainty — significant advantage over all DOACs. But <strong>uremic platelet dysfunction</strong> exists independent of anticoagulation. The drug\'s renal profile removes one variable, not all of them.' },
+          { cls:'l-wrong',  lbl:'If residents say "ESRD concern is gone"', content:'<div class="say">Does ESRD affect bleeding risk only through drug clearance? What does uremia do to platelet function independently? Abelacimab removes dosing uncertainty — which bleeding risk factor does it leave?</div>' },
+          { cls:'l-advance',lbl:'Advance with', content:'<div class="say">No renal clearance removes dosing uncertainty. It does not remove the elevated baseline bleeding risk of renal failure itself. She is still higher risk — but the drug\'s PK is more predictable than any current DOAC in this setting.</div>' },
+        ]
+      },
+      {
+        id:'Q17', badge:'qb-amber', question:'She has no reversal option. Does that change your counseling? Your prescription?',
+        rows:[
+          { cls:'l-listen', lbl:'Listen for', content:'The absence of reversal must be weighed against what the drug provides. Near-elimination of ICH means the most dangerous bleeding complication is largely prevented. Reversal matters most for trauma and urgent surgery — not necessarily the predictable GI bleeding this patient has already shown susceptibility to.' },
+          { cls:'l-silent', lbl:'Sharpen it', content:'<div class="say">She falls and sustains a subdural hematoma 3 weeks after her injection. t½ is 30 days. No reversal agent. You are the neurosurgery fellow taking the call. Walk me through management.</div>' },
+          { cls:'l-pivot',  lbl:'Proportionality point', content:'<div class="say">Andexanet alfa — the DOAC reversal agent — costs ~$27,000 per treatment course and causes thrombotic complications in roughly 10% of patients. How often does reversal actually change outcomes vs. supportive care alone? Is the reversal gap larger in theory than in practice?</div>' },
+          { cls:'l-advance',lbl:'Advance with', content:'<div class="say">The reversal gap is real and non-negotiable in your consent conversation. Whether it\'s a deal-breaker depends on this specific patient — how likely is she to have a neurosurgical emergency vs. a GI rebleed? Those questions must be answered with this patient, not in general.</div>' },
+        ]
+      },
+    ]
+  },
+  26: {
+    general: [
+      { lbl:'DEBATE SETUP', text:'Before advancing, say: <em>"The motion is specific: upon FDA approval of abelacimab, it should become first-line for AF patients with high bleeding risk — specifically prior major GI bleed, prior ICH, or ESRD. Left side argues for. Right side argues against. 60 seconds to caucus."</em> Start with pro side making their full case (90 sec), con responds directly to what was said (not from their list), then one rebuttal each.' },
+      { lbl:'MODERATOR COUNTERS — PRO', text:'<strong>"67% bleeding reduction"</strong> — let it land, it\'s correct. <strong>"ICH near-eliminated"</strong> — push: "How confident given trial size and early stopping?" <strong>"These patients currently get nothing"</strong> — challenge: "Is an inadequately validated stroke drug better than no drug?" <strong>"Monthly dosing"</strong> — push: "Who administers this in a rural non-dialysis patient?"' },
+      { lbl:'MODERATOR COUNTERS — CON', text:'<strong>"OCEANIC-AF proved the class can fail"</strong> — make them articulate FXI vs. FXIa distinction. <strong>"Don\'t know if it prevents stroke vs. apixaban"</strong> — reinforce: strongest con argument, don\'t let it get dropped. <strong>"No reversal"</strong> — push: "Does reversal availability actually change outcomes in practice?" <strong>"Early stopping inflates effect"</strong> — push: "By how much? Does HR 0.5 still change your practice?"' },
+      { lbl:'CLOSE THE DEBATE WITH', text:'<div class="say">Both sides raised the same underlying question: we have compelling safety data and uncertain efficacy data. The debate isn\'t really pro vs. con FXI inhibitors — it\'s about how much efficacy uncertainty you will accept in exchange for a very large bleeding reduction, in a patient who currently has no options. That\'s the question the FDA will have to answer. What single piece of additional data would resolve it for you?</div>' },
+    ]
+  },
+  27: {
+    general: [
+      { lbl:'TAKEAWAYS — read each aloud', text:'Walk through all six. Pause longest at #2 (FXI ≠ FXIa) and #4 (no reversal). These are the two points most likely to come up on boards and in practice. End with #6: <em>"Watch LIBREXIA-AF. That result will tell you whether this class has a future or whether LILAC was an outlier."</em>' },
+    ]
+  },
+  28: {
+    general: [
+      { lbl:'CLOSING', text:'Ask the exit question if time allows: <em>"Go back to the opening case in your head. At the beginning, I asked for a show of hands. I\'m not going to ask again. But whatever your answer is, it should be informed by the specific evidence we discussed today — not by general discomfort with anticoagulation, and not by uncritical enthusiasm for a new drug class. The evidence is promising, incomplete, and genuinely uncertain. That\'s exactly where good clinical judgment lives."</em>' },
+      { lbl:'IF SHORT ON TIME', text:'<div class="say">One sentence: FXI inhibitors may change who we anticoagulate — but only if the efficacy data we don\'t yet have matches the safety data we do. Watch LIBREXIA-AF.</div>' },
+    ]
+  },
+};
+
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let current = 0;
+const channel = new BroadcastChannel('fxi_slides');
+
+// ══════════════════════════════════════════════
+// BROADCAST — send slide index to slides.html
+// ══════════════════════════════════════════════
+function broadcast(idx) {
+  channel.postMessage({ type:'GOTO', index: idx });
+}
+
+// Listen for slide changes from slides.html (e.g. keyboard nav there)
+channel.addEventListener('message', e => {
+  if (e.data.type === 'SLIDE_CHANGED') {
+    setSlide(e.data.index, false);
+  }
+  if (e.data.type === 'SLIDES_READY') {
+    document.getElementById('cdot').className = 'conn-dot dot-live';
+    document.getElementById('conn-text').textContent = 'slides.html connected';
+    broadcast(current);
+  }
+});
+
+// ══════════════════════════════════════════════
+// SET SLIDE
+// ══════════════════════════════════════════════
+function setSlide(idx, shouldBroadcast = true) {
+  if (idx < 0 || idx >= TOTAL) return;
+  current = idx;
+  const s = SLIDES[idx];
+
+  document.getElementById('cur-section').textContent = s.section;
+  document.getElementById('cur-title').textContent   = s.title;
+  document.getElementById('cur-sub').textContent     = `Slide ${idx+1} of ${TOTAL} · ${s.sub}`;
+
+  const pct = ((idx + 1) / TOTAL * 100).toFixed(2);
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('pn-cur').textContent = idx + 1;
+
+  const next = SLIDES[idx + 1];
+  document.getElementById('next-section').textContent = next ? next.section.toUpperCase() : '—';
+  document.getElementById('next-title').textContent   = next ? next.title : 'End of presentation';
+
+  // notes transition
+  const nw = document.getElementById('notes-wrap');
+  nw.classList.add('fade');
+  setTimeout(() => {
+    buildNotes(idx);
+    nw.classList.remove('fade');
+    nw.parentElement.scrollTop = 0;
+  }, 180);
+
+  // strip active state
+  document.querySelectorAll('.strip-item').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+  const activeStrip = document.querySelector(`.strip-item[data-idx="${idx}"]`);
+  if (activeStrip) activeStrip.scrollIntoView({ behavior:'smooth', block:'nearest' });
+
+  if (shouldBroadcast) broadcast(idx);
+}
+
+// ══════════════════════════════════════════════
+// BUILD NOTES CONTENT
+// ══════════════════════════════════════════════
+function buildNotes(i) {
+  const s = SLIDES[i];
+  let html = `<div class="notes-slide-hdr"><h2>${s.title}</h2><div class="nsub">${s.section} · ${s.sub}</div></div>`;
+
+  const n = NOTES[i];
+  if (!n) {
+    html += `<div class="gen-card"><span class="gen-lbl">Presenter note</span>Present the slide content. No discussion questions — advance when ready.</div>`;
+    document.getElementById('q-badge').textContent = `Slide ${i+1}`;
+    document.getElementById('notes-content').innerHTML = html;
+    return;
+  }
+
+  if (n.general) n.general.forEach(g => {
+    html += `<div class="gen-card"><span class="gen-lbl">${g.lbl}</span>${g.text}</div>`;
+  });
+  if (n.questions) n.questions.forEach(q => {
+    html += `<div class="q-card"><div class="qc-hdr"><div class="qbadge ${q.badge}">${q.id}</div><div class="qc-q">${q.question}</div></div>`;
+    q.rows.forEach(r => {
+      html += `<div class="rrow"><div class="rlbl ${r.cls}">${r.lbl}</div><div class="rcont">${r.content}</div></div>`;
+    });
+    html += `</div>`;
+  });
+
+  const qCount = n.questions ? n.questions.length : 0;
+  document.getElementById('q-badge').textContent = `Slide ${i+1}${qCount ? ' · ' + qCount + 'Q' : ''}`;
+  document.getElementById('notes-content').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════
+document.getElementById('btn-next').addEventListener('click', () => setSlide(current + 1));
+document.getElementById('btn-prev').addEventListener('click', () => setSlide(current - 1));
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); setSlide(current + 1); }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    { e.preventDefault(); setSlide(current - 1); }
+});
+
+// Touch swipe
+let tx = 0;
+document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive:true });
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - tx;
+  if (Math.abs(dx) > 50) dx < 0 ? setSlide(current + 1) : setSlide(current - 1);
+}, { passive:true });
+
+// ══════════════════════════════════════════════
+// TIMER
+// ══════════════════════════════════════════════
+let timerSecs  = 45 * 60;
+let timerRun   = false;
+let timerInt   = null;
+const timerEl  = document.getElementById('timer-display');
+
+function formatTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+function tickTimer() {
+  if (timerSecs <= 0) { clearInterval(timerInt); timerRun = false; return; }
+  timerSecs--;
+  timerEl.textContent = formatTime(timerSecs);
+  timerEl.className = timerSecs <= 60 ? 'crit' : timerSecs <= 300 ? 'warn' : '';
+}
+document.getElementById('t-start').addEventListener('click', () => {
+  if (!timerRun) { timerRun = true; timerInt = setInterval(tickTimer, 1000); }
+});
+document.getElementById('t-pause').addEventListener('click', () => {
+  clearInterval(timerInt); timerRun = false;
+});
+document.getElementById('t-reset').addEventListener('click', () => {
+  clearInterval(timerInt); timerRun = false;
+  timerSecs = 45 * 60;
+  timerEl.textContent = formatTime(timerSecs);
+  timerEl.className = '';
+});
+
+// ══════════════════════════════════════════════
+// BUILD SLIDE STRIP
+// ══════════════════════════════════════════════
+function buildStrip() {
+  const strip = document.getElementById('strip-scroll');
+  const scale = 238 / 1024;  // panel width / slide iframe width
+  SLIDES.forEach((s, i) => {
+    const item = document.createElement('div');
+    item.className = 'strip-item' + (i === 0 ? ' active' : '');
+    item.dataset.idx = i;
+    item.style.cursor = 'pointer';
+    // We show slide number + label instead of live iframe (performance)
+    item.innerHTML = `
+      <div style="aspect-ratio:16/9; background:#070a0f; display:flex; align-items:center; justify-content:center; padding:10px; flex-direction:column; gap:5px;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:18px; color:var(--dim);">${String(i+1).padStart(2,'0')}</div>
+        <div style="font-family:'Playfair Display',serif; font-size:11px; color:var(--muted); text-align:center; line-height:1.3;">${s.title}</div>
+      </div>
+      <div class="strip-info">
+        <span class="strip-num">${i+1}</span>
+        <span class="strip-section">${s.section}</span>
+      </div>`;
+    item.addEventListener('click', () => setSlide(i));
+    strip.appendChild(item);
+  });
+  document.getElementById('pn-tot').textContent = TOTAL;
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+buildStrip();
+buildNotes(0);
+document.getElementById('next-section').textContent = SLIDES[1].section.toUpperCase();
+document.getElementById('next-title').textContent   = SLIDES[1].title;
+
+// Ping slides.html in case it's already open
+setTimeout(() => channel.postMessage({ type:'PRESENTER_READY' }), 500);
+</script>
+</body>
+</html>
