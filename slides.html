@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>FXI Inhibitors — Journal Club</title>
+<title>Two Phase 3 Trials, Opposite Results — FXI Journal Club</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -780,7 +780,7 @@ h3 {
   <div class="slide bg-glow-amber active" data-section="Introduction">
     <div class="slide-label">Internal Medicine Journal Club · 45 Minutes</div>
     <div class="sp8"></div>
-    <h1>Factor XI Inhibitors:<br><em>Promise, Failure,<br>and Breakthrough</em></h1>
+    <h1>Two Phase 3 Trials,<br>Opposite Results —<br><em>What Does That Tell You?</em></h1>
     <div class="title-rule"></div>
     <h3>Two Phase 3 trials. Opposite results.<br>One lesson that matters at the bedside.</h3>
     <div class="sp24"></div>
@@ -1489,26 +1489,36 @@ h3 {
   });
 
   // ── BroadcastChannel: sync with presenter.html ──
-  const presenterChannel = new BroadcastChannel('fxi_slides');
+  // Wrapped in try/catch — navigation works standalone even if this fails
+  try {
+    const presenterChannel = new BroadcastChannel('fxi_slides');
 
-  // Notify presenter.html that slides are ready
-  presenterChannel.postMessage({ type: 'SLIDES_READY' });
+    presenterChannel.postMessage({ type: 'SLIDES_READY' });
 
-  // Listen for navigation commands from presenter.html
-  presenterChannel.addEventListener('message', e => {
-    if (e.data.type === 'GOTO' && typeof e.data.index === 'number') {
-      goTo(e.data.index, e.data.index > current ? 1 : -1);
-    }
-    if (e.data.type === 'PRESENTER_READY') {
-      presenterChannel.postMessage({ type: 'SLIDES_READY' });
-    }
-  });
+    // Respond to presenter.html reconnecting
+    presenterChannel.addEventListener('message', e => {
+      if (e.data.type === 'GOTO' && typeof e.data.index === 'number') {
+        goTo(e.data.index, e.data.index > current ? 1 : -1);
+        setTimeout(() => presenterChannel.postMessage({ type: 'SLIDE_CHANGED', index: current }), 50);
+      }
+      if (e.data.type === 'PRESENTER_READY') {
+        presenterChannel.postMessage({ type: 'SLIDES_READY' });
+      }
+    });
 
-  // Notify presenter.html whenever this window advances
-  const _origGoTo = goTo;
-  function goTo(index, dir) {
-    _origGoTo(index, dir);
-    presenterChannel.postMessage({ type: 'SLIDE_CHANGED', index: current });
+    // Broadcast current slide after every local navigation
+    const broadcastCurrent = () => {
+      setTimeout(() => presenterChannel.postMessage({ type: 'SLIDE_CHANGED', index: current }), 50);
+    };
+    document.getElementById('nav-next').addEventListener('click', broadcastCurrent);
+    document.getElementById('nav-prev').addEventListener('click', broadcastCurrent);
+    document.addEventListener('keydown', e => {
+      if (['ArrowRight','ArrowLeft','ArrowUp','ArrowDown',' '].includes(e.key)) broadcastCurrent();
+    });
+    document.addEventListener('touchend', broadcastCurrent, { passive: true });
+
+  } catch(err) {
+    // BroadcastChannel unavailable — standalone mode, navigation unaffected
   }
 </script>
 </body>
